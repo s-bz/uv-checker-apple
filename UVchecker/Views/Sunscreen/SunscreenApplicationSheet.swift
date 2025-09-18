@@ -27,7 +27,7 @@ struct SunscreenApplicationSheet: View {
                 }
                 
                 Section {
-                    Picker("Application Amount", selection: $selectedQuantity) {
+                    Picker("", selection: $selectedQuantity) {
                         ForEach(ApplicationQuantity.allCases, id: \.self) { quantity in
                             VStack(alignment: .leading) {
                                 Text(quantity.displayName)
@@ -39,6 +39,7 @@ struct SunscreenApplicationSheet: View {
                         }
                     }
                     .pickerStyle(.inline)
+                    .labelsHidden()
                 } header: {
                     Text("Quantity Applied")
                 } footer: {

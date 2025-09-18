@@ -170,14 +170,12 @@ enum ActivityLevel: String, CaseIterable, Codable {
 
 // MARK: - SPF Options
 enum SPFOption: Int, CaseIterable {
-    case none = 0
     case spf15 = 15
     case spf30 = 30
     case spf50Plus = 50
     
     var displayName: String {
         switch self {
-        case .none: return "None"
         case .spf15: return "SPF 15"
         case .spf30: return "SPF 30"
         case .spf50Plus: return "SPF 50+"

@@ -11,9 +11,9 @@ struct UVWheelView: View {
     let onHourSelected: ((Date, HourlyUVData) -> Void)?
     
     // Wheel dimensions
-    private let outerRadius: CGFloat = 70
-    private let innerRadius: CGFloat = 50
-    private let strokeWidth: CGFloat = 20
+    private let outerRadius: CGFloat = 100
+    private let innerRadius: CGFloat = 70
+    private let strokeWidth: CGFloat = 30
     private let segmentGap: Angle = .degrees(1.5)
     
     init(
@@ -98,7 +98,7 @@ struct UVWheelView: View {
                 ForEach(0..<24, id: \.self) { hour in
                     HourLabel(
                         hour: hour,
-                        radius: outerRadius + 15,
+                        radius: outerRadius + 20,
                         angle: angleForHour(hour)
                     )
                 }
@@ -113,7 +113,7 @@ struct UVWheelView: View {
                     )
                 }
             }
-            .frame(width: (outerRadius + 15) * 2, height: (outerRadius + 15) * 2)
+            .frame(width: (outerRadius + 30) * 2, height: (outerRadius + 30) * 2)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             .gesture(
                 DragGesture()
@@ -346,7 +346,7 @@ struct CurrentTimeIndicator: View {
         
         Circle()
             .fill(Color.primary)
-            .frame(width: 10, height: 10)
+            .frame(width: 14, height: 14)
             .scaleEffect(isPulsing ? 1.2 : 1.0)
             .position(
                 x: radius * cos(angle.radians),
@@ -378,15 +378,15 @@ struct CenterDisplay: View {
                let hourData = hourlyData.first(where: { $0.hour == selectedHour }) {
                 
                 Text(formattedTime(selectedHour))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
                 Text("\(Int(hourData.uvIndex))")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(.system(size: 36, weight: .semibold))
                     .foregroundColor(.primary)
                 
                 Text(hourData.uvLevel.description)
-                    .font(.system(size: 10))
+                    .font(.system(size: 13))
                     .foregroundColor(.secondary)
             }
         }
@@ -434,11 +434,11 @@ struct DragHandle: View {
     var body: some View {
         Circle()
             .fill(Color.primary)
-            .frame(width: 18, height: 18)
+            .frame(width: 24, height: 24)
             .overlay(
                 Circle()
                     .fill(Color(UIColor.systemBackground))
-                    .frame(width: 12, height: 12)
+                    .frame(width: 16, height: 16)
             )
             .scaleEffect(isDragging ? 1.2 : 1.0)
             .position(

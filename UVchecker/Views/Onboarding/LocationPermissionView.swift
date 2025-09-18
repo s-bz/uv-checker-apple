@@ -6,8 +6,6 @@ struct LocationPermissionView: View {
     let onComplete: () -> Void
     let onBack: () -> Void
     
-    @State private var showingManualEntry = false
-    
     var body: some View {
         VStack(spacing: 30) {
             Spacer()
@@ -67,68 +65,23 @@ struct LocationPermissionView: View {
             
             Spacer()
             
-            VStack(spacing: 12) {
-                Button(action: {
-                    locationService.requestLocationPermission()
-                    // Wait a moment for permission dialog
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        checkLocationStatusAndProceed()
-                    }
-                }) {
-                    Text("Enable Location Services")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(12)
+            Button(action: {
+                locationService.requestLocationPermission()
+                // Wait a moment for permission dialog
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    checkLocationStatusAndProceed()
                 }
-                
-                Button(action: {
-                    showingManualEntry = true
-                }) {
-                    Text("Enter Location Manually")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
+            }) {
+                Text("Continue")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(12)
             }
             .padding(.horizontal)
-            
-            HStack(spacing: 16) {
-                Button(action: onBack) {
-                    Text("Back")
-                        .font(.headline)
-                        .foregroundColor(.accentColor)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.accentColor, lineWidth: 2)
-                        )
-                }
-                
-                Button(action: {
-                    onComplete()
-                }) {
-                    Text("Skip for Now")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(UIColor.tertiarySystemBackground))
-                        )
-                }
-            }
-            .padding()
-        }
-        .sheet(isPresented: $showingManualEntry) {
-            ManualLocationEntryView { location in
-                // Handle manual location
-                showingManualEntry = false
-                onComplete()
-            }
+            .padding(.bottom, 30)
         }
         .onChange(of: locationService.authorizationStatus) { _, newStatus in
             if newStatus == .authorizedAlways || newStatus == .authorizedWhenInUse {
@@ -165,33 +118,3 @@ struct LocationBenefit: View {
     }
 }
 
-struct ManualLocationEntryView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var searchText = ""
-    let onLocationSelected: (String) -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack {
-                TextField("Enter city name", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .padding()
-                
-                List {
-                    // Placeholder for location search results
-                    Text("Location search will be implemented")
-                        .foregroundColor(.secondary)
-                }
-            }
-            .navigationTitle("Enter Location")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}

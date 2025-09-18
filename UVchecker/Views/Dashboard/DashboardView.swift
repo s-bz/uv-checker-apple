@@ -79,7 +79,8 @@ struct DashboardView: View {
                                     selectedHourData = data
                                 }
                             )
-                            .frame(height: 200)
+                            .frame(height: 280)
+                            .padding(.vertical, 10)
                             
                             // Selected Hour Details
                             if let selectedData = selectedHourData,
@@ -484,14 +485,16 @@ struct SunscreenStatusView: View {
                 .padding()
                 .background(Color(UIColor.tertiarySystemBackground))
                 .cornerRadius(8)
-            } else {
-                Button(action: onApplySunscreen) {
-                    Label("Apply Sunscreen", systemImage: "sun.max.circle")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
             }
+            
+            // Always show Apply Sunscreen button
+            Button(action: onApplySunscreen) {
+                Label(currentSunscreen != nil ? "Reapply Sunscreen" : "Apply Sunscreen", 
+                      systemImage: "sun.max.circle")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
         }
         .padding(.horizontal)
     }
