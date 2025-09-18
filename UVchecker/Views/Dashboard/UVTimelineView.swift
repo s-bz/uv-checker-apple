@@ -2,11 +2,13 @@ import SwiftUI
 
 struct UVTimelineView: View {
     let hourlyData: [HourlyUVData]
+    let sunscreenWindow: (start: Date?, end: Date?)
     @State private var selectedHour: Date?
     @State private var selectedHourData: HourlyUVData?
     
-    init(hourlyData: [HourlyUVData]) {
+    init(hourlyData: [HourlyUVData], sunscreenWindow: (start: Date?, end: Date?)) {
         self.hourlyData = hourlyData
+        self.sunscreenWindow = sunscreenWindow
         // Initialize with current hour selected
         let currentHour = Date()
         if let closestHour = hourlyData.min(by: { abs($0.hour.timeIntervalSince(currentHour)) < abs($1.hour.timeIntervalSince(currentHour)) }) {
@@ -20,6 +22,27 @@ struct UVTimelineView: View {
             // Header
             Text("24-Hour Forecast")
                 .font(.headline)
+            
+            // Sunscreen Window - only show when actually needed
+            if let start = sunscreenWindow.start,
+               let end = sunscreenWindow.end {
+                HStack {
+                    Image(systemName: "sun.max.trianglebadge.exclamationmark")
+                        .foregroundColor(.orange)
+                    
+                    Text("Sunblock needed")
+                        .font(.subheadline)
+                    
+                    Spacer()
+                    
+                    Text("\(formattedTime(start)) - \(formattedTime(end))")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+                .padding()
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(8)
+            }
             
             // Timeline
             ScrollViewReader { proxy in
@@ -86,6 +109,12 @@ struct UVTimelineView: View {
         return hourlyData.firstIndex { hourData in
             Calendar.current.component(.hour, from: hourData.hour) == currentHour
         }
+    }
+    
+    private func formattedTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 

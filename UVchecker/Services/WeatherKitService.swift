@@ -107,6 +107,9 @@ class WeatherKitService: ObservableObject {
             lastFetchLocation = location
             lastFetchTime = Date()
             
+            // Update widget data
+            updateWidgetData(modelContext: modelContext, locationName: locationName)
+            
         } catch {
             self.error = .weatherKitError(error)
             
@@ -193,5 +196,44 @@ class WeatherKitService: ObservableObject {
         let peakHours = hourlyForecast.filter { abs($0.uvIndex - maxUV) < 0.5 }
         
         return (peakHours.first?.hour, peakHours.last?.hour, maxUV)
+    }
+    
+    // MARK: - Widget Data Update
+    
+    private func updateWidgetData(modelContext: ModelContext?, locationName: String) {
+        // Get current skin profile and sunscreen from model context
+        var skinProfile: SkinProfile?
+        var sunscreenApplication: SunscreenApplication?
+        var locationData: LocationData?
+        
+        if let context = modelContext {
+            // Fetch skin profile
+            let profileDescriptor = FetchDescriptor<SkinProfile>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            skinProfile = try? context.fetch(profileDescriptor).first
+            
+            // Fetch active sunscreen application
+            let sunscreenDescriptor = FetchDescriptor<SunscreenApplication>(
+                sortBy: [SortDescriptor(\.appliedAt, order: .reverse)]
+            )
+            let sunscreens = (try? context.fetch(sunscreenDescriptor)) ?? []
+            sunscreenApplication = sunscreens.first { !$0.needsReapplication }
+            
+            // Fetch location data
+            let locationDescriptor = FetchDescriptor<LocationData>(
+                sortBy: [SortDescriptor(\.lastUpdated, order: .reverse)]
+            )
+            locationData = try? context.fetch(locationDescriptor).first
+        }
+        
+        // Update widget shared data
+        WidgetDataManager.shared.updateWidgetData(
+            uvData: currentUVData,
+            skinProfile: skinProfile,
+            sunscreenApplication: sunscreenApplication,
+            hourlyForecast: hourlyForecast,
+            locationData: locationData
+        )
     }
 }

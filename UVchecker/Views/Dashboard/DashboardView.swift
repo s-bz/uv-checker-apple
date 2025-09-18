@@ -60,7 +60,8 @@ struct DashboardView: View {
                     // UV Timeline
                     if !weatherService.hourlyForecast.isEmpty {
                         UVTimelineView(
-                            hourlyData: weatherService.hourlyForecast
+                            hourlyData: weatherService.hourlyForecast,
+                            sunscreenWindow: weatherService.calculateSunscreenWindow()
                         )
                         .padding(.horizontal)
                     }
@@ -226,6 +227,9 @@ struct DashboardView: View {
         modelContext.insert(application)
         try? modelContext.save()
         
+        // Update widget data
+        updateWidgetData()
+        
         showingSunscreenSheet = false
     }
     
@@ -233,7 +237,21 @@ struct DashboardView: View {
         if let current = currentSunscreen {
             modelContext.delete(current)
             try? modelContext.save()
+            
+            // Update widget data
+            updateWidgetData()
         }
+    }
+    
+    private func updateWidgetData() {
+        // Trigger widget data update
+        WidgetDataManager.shared.updateWidgetData(
+            uvData: weatherService.currentUVData,
+            skinProfile: currentSkinProfile,
+            sunscreenApplication: currentSunscreen,
+            hourlyForecast: weatherService.hourlyForecast,
+            locationData: locationService.currentLocationData
+        )
     }
     
     private func enableNotifications() {
@@ -388,27 +406,6 @@ struct CurrentConditionsCard: View {
                 }
                 .padding()
                 .background(Color(UIColor.tertiarySystemBackground))
-                .cornerRadius(8)
-            }
-            
-            // Sunscreen Window - only show when actually needed
-            if let start = sunscreenWindow.start,
-               let end = sunscreenWindow.end {
-                HStack {
-                    Image(systemName: "sun.max.trianglebadge.exclamationmark")
-                        .foregroundColor(.orange)
-                    
-                    Text("Sunblock needed")
-                        .font(.subheadline)
-                    
-                    Spacer()
-                    
-                    Text("\(formattedTime(start)) - \(formattedTime(end))")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                }
-                .padding()
-                .background(Color.orange.opacity(0.1))
                 .cornerRadius(8)
             }
             
