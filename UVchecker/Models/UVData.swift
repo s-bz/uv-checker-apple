@@ -105,7 +105,7 @@ enum UVLevel: Int, CaseIterable {
     var recommendation: String {
         switch self {
         case .low:
-            return "Minimal sun protection required"
+            return "No protection needed"
         case .moderate:
             return "Take care during midday hours"
         case .high:

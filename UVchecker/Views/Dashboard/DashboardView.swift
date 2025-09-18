@@ -21,8 +21,6 @@ struct DashboardView: View {
     @Query(sort: \SkinProfile.createdAt, order: .reverse) private var skinProfiles: [SkinProfile]
     @Query(sort: \SunscreenApplication.appliedAt, order: .reverse) private var sunscreenApplications: [SunscreenApplication]
     
-    @State private var selectedHourData: HourlyUVData?
-    @State private var selectedHourTime: Date?
     @State private var showingSunscreenSheet = false
     @State private var showingProfileSetup = false
     @State private var showingSkinProfileWizard = false
@@ -49,51 +47,22 @@ struct DashboardView: View {
                         onRefresh: refreshData
                     )
                     
-                    // Current Conditions Card
+                    // Current Conditions Card (with integrated sunscreen)
                     CurrentConditionsCard(
                         uvData: weatherService.currentUVData,
                         burnTime: currentBurnTime,
-                        sunscreenWindow: weatherService.calculateSunscreenWindow()
-                    )
-                    
-                    // Sunscreen Status
-                    SunscreenStatusView(
+                        sunscreenWindow: weatherService.calculateSunscreenWindow(),
                         currentSunscreen: currentSunscreen,
                         onApplySunscreen: { showingSunscreenSheet = true },
                         onRemoveSunscreen: removeSunscreen
                     )
                     
-                    // UV Wheel
+                    // UV Timeline
                     if !weatherService.hourlyForecast.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("24-Hour Forecast")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            UVWheelView(
-                                hourlyData: weatherService.hourlyForecast,
-                                sunscreenWindow: weatherService.calculateSunscreenWindow(),
-                                peakWindow: weatherService.peakUVHours(),
-                                onHourSelected: { time, data in
-                                    selectedHourTime = time
-                                    selectedHourData = data
-                                }
-                            )
-                            .frame(height: 280)
-                            .padding(.vertical, 10)
-                            
-                            // Selected Hour Details
-                            if let selectedData = selectedHourData,
-                               let selectedTime = selectedHourTime {
-                                SelectedHourCard(
-                                    time: selectedTime,
-                                    uvData: selectedData,
-                                    burnTime: calculateBurnTimeForHour(selectedData),
-                                    sunscreen: currentSunscreen
-                                )
-                                .padding(.horizontal)
-                            }
-                        }
+                        UVTimelineView(
+                            hourlyData: weatherService.hourlyForecast
+                        )
+                        .padding(.horizontal)
                     }
                     
                     // Quick Actions
@@ -367,6 +336,9 @@ struct CurrentConditionsCard: View {
     let uvData: UVData?
     let burnTime: BurnTimeCalculator.BurnTimeResult?
     let sunscreenWindow: (start: Date?, end: Date?)
+    let currentSunscreen: SunscreenApplication?
+    let onApplySunscreen: () -> Void
+    let onRemoveSunscreen: () -> Void
     
     var body: some View {
         VStack(spacing: 16) {
@@ -399,10 +371,12 @@ struct CurrentConditionsCard: View {
                 Spacer()
             }
             
-            // Burn Time
-            if let burnTime = burnTime {
+            // Burn Time - only show if UV > 0
+            if let burnTime = burnTime,
+               let uvData = uvData,
+               uvData.uvIndex > 0 {
                 HStack {
-                    Label("Burn Time", systemImage: "timer")
+                    Label("Sunburn within", systemImage: "timer")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
@@ -417,14 +391,14 @@ struct CurrentConditionsCard: View {
                 .cornerRadius(8)
             }
             
-            // Sunscreen Window
+            // Sunscreen Window - only show when actually needed
             if let start = sunscreenWindow.start,
                let end = sunscreenWindow.end {
                 HStack {
                     Image(systemName: "sun.max.trianglebadge.exclamationmark")
                         .foregroundColor(.orange)
                     
-                    Text("Take care")
+                    Text("Sunblock needed")
                         .font(.subheadline)
                     
                     Spacer()
@@ -436,6 +410,46 @@ struct CurrentConditionsCard: View {
                 .padding()
                 .background(Color.orange.opacity(0.1))
                 .cornerRadius(8)
+            }
+            
+            // Sunscreen Status Section
+            Divider()
+            
+            VStack(spacing: 12) {
+                if let sunscreen = currentSunscreen {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("SPF \(sunscreen.spfValue) • \(sunscreen.quantity.displayName)")
+                                .font(.headline)
+                            
+                            Text("Applied \(formattedTime(sunscreen.appliedAt))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text(sunscreen.statusDescription)
+                                .font(.caption)
+                                .foregroundColor(sunscreen.needsReapplication ? .orange : .secondary)
+                            
+                            Button(action: onRemoveSunscreen) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                
+                // Always show Apply Sunscreen button
+                Button(action: onApplySunscreen) {
+                    Label(currentSunscreen != nil ? "Reapply Sunscreen" : "Apply Sunscreen", 
+                          systemImage: "sun.max.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
             }
         }
         .padding()
@@ -451,111 +465,7 @@ struct CurrentConditionsCard: View {
     }
 }
 
-struct SunscreenStatusView: View {
-    let currentSunscreen: SunscreenApplication?
-    let onApplySunscreen: () -> Void
-    let onRemoveSunscreen: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            if let sunscreen = currentSunscreen {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("SPF \(sunscreen.spfValue) • \(sunscreen.quantity.displayName)")
-                            .font(.headline)
-                        
-                        Text("Applied \(formattedTime(sunscreen.appliedAt))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(sunscreen.statusDescription)
-                            .font(.caption)
-                            .foregroundColor(sunscreen.needsReapplication ? .orange : .secondary)
-                        
-                        Button(action: onRemoveSunscreen) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                .padding()
-                .background(Color(UIColor.tertiarySystemBackground))
-                .cornerRadius(8)
-            }
-            
-            // Always show Apply Sunscreen button
-            Button(action: onApplySunscreen) {
-                Label(currentSunscreen != nil ? "Reapply Sunscreen" : "Apply Sunscreen", 
-                      systemImage: "sun.max.circle")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        }
-        .padding(.horizontal)
-    }
-    
-    private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-}
 
-struct SelectedHourCard: View {
-    let time: Date
-    let uvData: HourlyUVData
-    let burnTime: BurnTimeCalculator.BurnTimeResult
-    let sunscreen: SunscreenApplication?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("At \(formattedTime(time))")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("UV \(Int(uvData.uvIndex))")
-                        .font(.headline)
-                    Text(uvData.uvLevel.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing) {
-                    Text("Burn time")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text(burnTime.displayText)
-                        .font(.headline)
-                        .foregroundColor(burnTimeWarningColor(burnTime.warningLevel))
-                }
-            }
-            
-            if let spf = sunscreen {
-                Text("With SPF \(spf.spfValue) • Effective SPF: \(Int(burnTime.effectiveSPF))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding()
-        .background(Color(UIColor.tertiarySystemBackground))
-        .cornerRadius(8)
-    }
-    
-    private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-}
 
 struct QuickActionsSection: View {
     let hasProfile: Bool

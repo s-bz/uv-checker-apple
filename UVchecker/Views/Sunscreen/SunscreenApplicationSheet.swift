@@ -22,8 +22,6 @@ struct SunscreenApplicationSheet: View {
                     .pickerStyle(.segmented)
                 } header: {
                     Text("Sun Protection Factor")
-                } footer: {
-                    Text("Higher SPF provides more protection, but proper application is key.")
                 }
                 
                 Section {
