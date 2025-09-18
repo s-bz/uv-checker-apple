@@ -26,6 +26,7 @@ struct DashboardView: View {
     @State private var showingSkinProfileWizard = false
     @State private var isRefreshing = false
     @State private var notificationPermissionStatus: UNAuthorizationStatus = .notDetermined
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     private var currentSkinProfile: SkinProfile? {
         skinProfiles.first
@@ -193,8 +194,8 @@ struct DashboardView: View {
             }
         }
         
-        // Show profile setup if needed
-        if skinProfiles.isEmpty {
+        // Show onboarding if not completed
+        if !hasCompletedOnboarding {
             showingProfileSetup = true
         }
     }

@@ -4,6 +4,7 @@ struct OnboardingCompleteView: View {
     let onComplete: () -> Void
     
     @State private var isAnimating = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some View {
         VStack(spacing: 40) {
@@ -84,7 +85,10 @@ struct OnboardingCompleteView: View {
             
             Spacer()
             
-            Button(action: onComplete) {
+            Button(action: {
+                hasCompletedOnboarding = true
+                onComplete()
+            }) {
                 Text("Start Using UV Checker")
                     .font(.headline)
                     .foregroundColor(.white)
