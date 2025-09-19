@@ -519,6 +519,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = uvchecker;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = UVSense/UVSense.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YH2Y8LT5HT;
@@ -531,8 +532,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "UV Sense";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "UV Checker needs your location to remind you to wear sunblock when you leave your home, based on current weather conditions of your area.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "UV Checker needs your location to provide accurate UV index and sun safety information for your area.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "UV Sense will use your location in the background to remind you about sun protection when you leave home during high UV periods.";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Allow UV Sense to access your location even when the app is closed to provide leave-home reminders on sunny days.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "UV Sense needs your location to provide accurate UV index and sun safety information for your area.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -548,8 +550,9 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVSense;
+				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVchecker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -571,6 +574,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = uvchecker;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = UVSense/UVSense.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = YH2Y8LT5HT;
@@ -583,8 +587,9 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "UV Sense";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "UV Checker needs your location to remind you to wear sunblock when you leave your home, based on current weather conditions of your area.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "UV Checker needs your location to provide accurate UV index and sun safety information for your area.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "UV Sense will use your location in the background to remind you about sun protection when you leave home during high UV periods.";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Allow UV Sense to access your location even when the app is closed to provide leave-home reminders on sunny days.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "UV Sense needs your location to provide accurate UV index and sun safety information for your area.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -600,8 +605,9 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVSense;
+				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVchecker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -731,7 +737,7 @@
 				DEVELOPMENT_TEAM = YH2Y8LT5HT;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Widget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Widget;
+				INFOPLIST_KEY_CFBundleDisplayName = "UV Sense";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -740,7 +746,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVSense.Widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVchecker.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -770,7 +776,7 @@
 				DEVELOPMENT_TEAM = YH2Y8LT5HT;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Widget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Widget;
+				INFOPLIST_KEY_CFBundleDisplayName = "UV Sense";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -779,7 +785,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVSense.Widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.infuseproduct.UVchecker.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;

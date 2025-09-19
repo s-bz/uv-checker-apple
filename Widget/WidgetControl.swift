@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct WidgetControl: ControlWidget {
-    static let kind: String = "com.infuseproduct.UVSense.Widget"
+    static let kind: String = "com.infuseproduct.UVChecker.Widget"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

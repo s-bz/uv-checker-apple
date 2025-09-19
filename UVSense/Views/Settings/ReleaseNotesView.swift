@@ -14,26 +14,8 @@ struct ReleaseNotesView: View {
     
     private let releaseNotes: [ReleaseNote] = [
         ReleaseNote(
-            version: "1.1.0",
-            date: "December 2024",
-            features: [
-                "Leave-home reminders for sun protection",
-                "Tomorrow's weather forecast",
-                "Comprehensive settings menu"
-            ],
-            fixes: [
-                "Fixed sunscreen window time display",
-                "Improved location permission handling"
-            ],
-            improvements: [
-                "Better time formatting throughout app",
-                "Cleaner dashboard layout",
-                "Enhanced VPN detection"
-            ]
-        ),
-        ReleaseNote(
             version: "1.0.0",
-            date: "November 2024",
+            date: "September 2025",
             features: [
                 "Real-time UV index monitoring",
                 "Personalized burn time calculations",

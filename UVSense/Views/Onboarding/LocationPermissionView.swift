@@ -79,13 +79,10 @@ struct LocationPermissionView: View {
                     }
                 }) {
                     Text("Continue")
-                        .font(.headline)
-                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(12)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
             .padding(.horizontal)
             .padding(.bottom, 30)
