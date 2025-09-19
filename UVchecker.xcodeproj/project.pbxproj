@@ -68,11 +68,21 @@
 			);
 			target = A2B382822E7C7B7C0024F1FA /* WidgetExtension */;
 		};
+		A2B383662E7CCCD50024F1FA /* Exceptions for "UVchecker" folder in "UVchecker" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A2B381E72E7C53850024F1FA /* UVchecker */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A2B381EA2E7C53850024F1FA /* UVchecker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A2B383662E7CCCD50024F1FA /* Exceptions for "UVchecker" folder in "UVchecker" target */,
+			);
 			path = UVchecker;
 			sourceTree = "<group>";
 		};
@@ -517,9 +527,11 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = UVchecker/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "UV Checker";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "UV Checker needs your location to remind you to wear sunblock when you leave your home, based on current weather conditions of your area.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "UV Checker needs your location to provide accurate UV index and sun safety information for your area.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -567,9 +579,11 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = UVchecker/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "UV Checker";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "UV Checker needs your location to remind you to wear sunblock when you leave your home, based on current weather conditions of your area.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "UV Checker needs your location to provide accurate UV index and sun safety information for your area.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

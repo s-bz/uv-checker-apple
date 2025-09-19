@@ -26,6 +26,9 @@ struct DashboardView: View {
     @State private var showingSkinProfileWizard = false
     @State private var isRefreshing = false
     @State private var notificationPermissionStatus: UNAuthorizationStatus = .notDetermined
+    @State private var showingLocationUpgradeAlert = false
+    @State private var showLocationToast = false
+    @State private var toastMessage = ""
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     private var currentSkinProfile: SkinProfile? {
@@ -38,15 +41,22 @@ struct DashboardView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Location Header
-                    LocationHeaderView(
-                        locationData: locationService.currentLocationData,
-                        currentUV: weatherService.currentUVData,
-                        isStale: weatherService.currentUVData?.isStale ?? false,
-                        onRefresh: refreshData
-                    )
+            ZStack(alignment: .top) {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Space for warning banner if needed
+                        if locationService.currentLocationData?.locationType != .precise {
+                            Color.clear.frame(height: 140)
+                        }
+                        
+                        // Location Header
+                        LocationHeaderView(
+                            locationData: locationService.currentLocationData,
+                            currentUV: weatherService.currentUVData,
+                            isStale: weatherService.currentUVData?.isStale ?? false,
+                            onRefresh: refreshData
+                        )
+                        .padding(.horizontal)
                     
                     // Current Conditions Card (with integrated sunscreen)
                     CurrentConditionsCard(
@@ -57,6 +67,7 @@ struct DashboardView: View {
                         onApplySunscreen: { showingSunscreenSheet = true },
                         onRemoveSunscreen: removeSunscreen
                     )
+                    .padding(.horizontal)
                     
                     // UV Timeline
                     if !weatherService.hourlyForecast.isEmpty {
@@ -71,11 +82,24 @@ struct DashboardView: View {
                     QuickActionsSection(
                         hasProfile: currentSkinProfile != nil,
                         notificationStatus: notificationPermissionStatus,
+                        hasAlwaysLocation: locationService.hasAlwaysPermission(),
                         onSetupProfile: { showingSkinProfileWizard = true },
                         onEnableNotifications: enableNotifications
                     )
+                    .padding(.horizontal)
+                    }
+                    .padding(.vertical, 16)
                 }
-                .padding(.bottom, 20)
+                
+                // Location Warning Banner (overlaid at top)
+                VStack {
+                    LocationWarningBanner(
+                        locationData: locationService.currentLocationData,
+                        onEnablePreciseLocation: handleEnablePreciseLocation,
+                        onDismiss: {}
+                    )
+                    Spacer()
+                }
             }
             .navigationTitle("UV Checker")
             .navigationBarTitleDisplayMode(.large)
@@ -120,9 +144,66 @@ struct DashboardView: View {
             .sheet(isPresented: $showingSkinProfileWizard) {
                 SkinProfileWizard()
             }
+            .alert("Location Permission Needed", isPresented: $showingLocationUpgradeAlert) {
+                Button("Open Settings") {
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                switch locationService.authorizationStatus {
+                case .denied:
+                    Text("Location access is denied.\n\nPlease go to Settings and enable location access for UV Checker to receive leave-home reminders.")
+                case .restricted:
+                    Text("Location access is restricted.\n\nPlease check your device settings to enable location services.")
+                default:
+                    Text("UV Checker needs proper location permissions:\n\n• 'While Using App' - For UV updates when the app is open\n• 'Always Allow' - For reminders when you leave home\n\nYou currently have 'Allow Once' permission. Please go to Settings and change to 'While Using App', then return here to enable leave-home reminders.")
+                }
+            }
             .task {
                 await initialLoad()
                 await checkNotificationPermission()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .locationUpdatedViaIP)) { notification in
+                Task {
+                    // Show brief loading indicator
+                    isRefreshing = true
+                    
+                    let isVPN = notification.userInfo?["isVPN"] as? Bool ?? false
+                    
+                    if let location = notification.object as? CLLocation,
+                       let locationData = locationService.currentLocationData {
+                        // Fetch weather for new location
+                        await weatherService.fetchWeatherData(
+                            for: location,
+                            locationName: locationData.displayName,
+                            modelContext: modelContext
+                        )
+                        
+                        // Show toast notification
+                        if isVPN {
+                            toastMessage = "VPN detected - Using \(locationData.shortDisplayName)"
+                        } else {
+                            toastMessage = "Location updated to \(locationData.shortDisplayName)"
+                        }
+                        showLocationToast = true
+                        
+                        // Hide toast after delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            showLocationToast = false
+                        }
+                    }
+                    
+                    isRefreshing = false
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showLocationToast {
+                    ToastView(message: toastMessage, icon: "location.fill")
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .animation(.easeInOut, value: showLocationToast)
+                }
             }
             .onChange(of: locationService.authorizationStatus) { oldStatus, newStatus in
                 // When permission is newly granted, fetch location and weather
@@ -175,14 +256,29 @@ struct DashboardView: View {
     private func initialLoad() async {
         locationService.setModelContext(modelContext)
         
-        // If we already have permission, request location and load weather data
+        // Check authorization status
         if locationService.authorizationStatus == .authorizedAlways || 
            locationService.authorizationStatus == .authorizedWhenInUse {
-            // Request current location
+            // Request current GPS location
             locationService.requestLocation()
             
             // Wait a moment for location to be obtained
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            
+            if let location = locationService.currentLocation,
+               let locationData = locationService.currentLocationData {
+                await weatherService.fetchWeatherData(
+                    for: location,
+                    locationName: locationData.displayName,
+                    modelContext: modelContext
+                )
+            }
+        } else if locationService.authorizationStatus == .denied || 
+                  locationService.authorizationStatus == .restricted {
+            // Use IP-based location as fallback
+            // The LocationService will automatically fetch IP location
+            // Wait for it to complete
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
             
             if let location = locationService.currentLocation,
                let locationData = locationService.currentLocationData {
@@ -257,9 +353,38 @@ struct DashboardView: View {
     
     private func enableNotifications() {
         Task {
+            // First request notification permission
             let notificationService = NotificationService.shared
             _ = await notificationService.requestNotificationPermission()
             await checkNotificationPermission()
+            
+            // Then handle location permissions
+            if !locationService.hasAlwaysPermission() {
+                // Check current authorization status
+                switch locationService.authorizationStatus {
+                case .notDetermined:
+                    // First time - request While Using permission
+                    locationService.requestLocationPermission()
+                case .authorizedWhenInUse:
+                    // Can upgrade from While Using to Always
+                    locationService.requestAlwaysAuthorization()
+                    // Set current location as home if we have it
+                    if let currentLocation = locationService.currentLocation {
+                        locationService.setHomeLocation(currentLocation)
+                    }
+                case .denied, .restricted:
+                    // Denied or restricted - must go to settings
+                    showingLocationUpgradeAlert = true
+                default:
+                    // "Allow Once" or other temporary permission - need to go to settings
+                    showingLocationUpgradeAlert = true
+                }
+            } else {
+                // Already have Always permission, just set home location
+                if let currentLocation = locationService.currentLocation {
+                    locationService.setHomeLocation(currentLocation)
+                }
+            }
         }
     }
     
@@ -268,6 +393,25 @@ struct DashboardView: View {
         let settings = await center.notificationSettings()
         await MainActor.run {
             notificationPermissionStatus = settings.authorizationStatus
+        }
+    }
+    
+    private func handleEnablePreciseLocation() {
+        // Check current authorization and handle accordingly
+        switch locationService.authorizationStatus {
+        case .notDetermined:
+            // Request permission directly
+            locationService.requestLocationPermission()
+        case .denied, .restricted:
+            // Must go to settings
+            if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(settingsUrl)
+            }
+        case .authorizedWhenInUse, .authorizedAlways:
+            // Already have permission, refresh location
+            locationService.requestLocation()
+        @unknown default:
+            break
         }
     }
 }
@@ -288,10 +432,11 @@ struct LocationHeaderView: View {
                         .font(.headline)
                     
                     HStack(spacing: 4) {
-                        Image(systemName: "location.fill")
+                        Image(systemName: location.locationIcon)
                             .font(.caption2)
+                            .foregroundColor(location.isVPN ? .orange : .secondary)
                         
-                        Text(location.isManuallySet ? "Manual location" : "Using your location")
+                        Text(locationStatusText(location))
                             .font(.caption)
                         
                         Text("•")
@@ -328,10 +473,9 @@ struct LocationHeaderView: View {
                 }
             }
         }
-        .padding()
+        .padding(16)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
-        .padding(.horizontal)
     }
     
     private func formattedTime(_ date: Date) -> String {
@@ -348,6 +492,19 @@ struct LocationHeaderView: View {
         if condition.contains("rain") { return "cloud.rain" }
         if condition.contains("clear") || condition.contains("sun") { return "sun.max" }
         return "sun.max"
+    }
+    
+    private func locationStatusText(_ location: LocationData) -> String {
+        switch location.locationType {
+        case .precise:
+            return "Using your location"
+        case .approximate:
+            return "IP-based location"
+        case .vpn:
+            return "VPN location"
+        case .manual:
+            return "Manual location"
+        }
     }
 }
 
@@ -450,10 +607,9 @@ struct CurrentConditionsCard: View {
                 .controlSize(.regular)
             }
         }
-        .padding()
+        .padding(16)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
-        .padding(.horizontal)
     }
     
     private func formattedTime(_ date: Date) -> String {
@@ -468,8 +624,21 @@ struct CurrentConditionsCard: View {
 struct QuickActionsSection: View {
     let hasProfile: Bool
     let notificationStatus: UNAuthorizationStatus
+    let hasAlwaysLocation: Bool
     let onSetupProfile: () -> Void
     let onEnableNotifications: () -> Void
+    
+    var buttonTitle: String {
+        if notificationStatus != .authorized && !hasAlwaysLocation {
+            return "Enable Leave-Home Reminders"
+        } else if notificationStatus != .authorized {
+            return "Enable Notifications"
+        } else if !hasAlwaysLocation {
+            return "Enable Background Location"
+        } else {
+            return "Enable Leave-Home Reminders"
+        }
+    }
     
     var body: some View {
         VStack(spacing: 12) {
@@ -482,16 +651,15 @@ struct QuickActionsSection: View {
                 .controlSize(.large)
             }
             
-            // Only show notification button if permission not granted
-            if notificationStatus != .authorized {
+            // Show button if either notification or Always location not granted
+            if notificationStatus != .authorized || !hasAlwaysLocation {
                 Button(action: onEnableNotifications) {
-                    Label("Enable Leave-Home Reminders", systemImage: "bell.badge")
+                    Label(buttonTitle, systemImage: "bell.badge")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
             }
         }
-        .padding(.horizontal)
     }
 }

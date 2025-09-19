@@ -9,6 +9,8 @@ class LocationService: NSObject, ObservableObject {
     static let shared = LocationService()
     
     private let locationManager = CLLocationManager()
+    private let ipLocationService = IPLocationService.shared
+    private let networkMonitor = NetworkMonitor.shared
     
     @Published var currentLocation: CLLocation?
     @Published var currentLocationData: LocationData?
@@ -16,15 +18,19 @@ class LocationService: NSObject, ObservableObject {
     @Published var isUpdatingLocation = false
     @Published var locationError: LocationError?
     @Published var isAtHome = true
+    @Published var isUsingIPLocation = false
     
     private var continuation: CheckedContinuation<CLLocation?, Error>?
     private var modelContext: ModelContext?
     private var homeRegion: CLCircularRegion?
     private let homeRegionIdentifier = "com.uvchecker.home"
+    private var cancellables = Set<AnyCancellable>()
     
     override private init() {
         super.init()
         setupLocationManager()
+        setupIPLocationMonitoring()
+        networkMonitor.start()
     }
     
     enum LocationError: LocalizedError {
@@ -59,6 +65,49 @@ class LocationService: NSObject, ObservableObject {
         
         // Check initial authorization status
         authorizationStatus = locationManager.authorizationStatus
+        
+        // If denied/restricted, fall back to IP location immediately
+        if authorizationStatus == .denied || authorizationStatus == .restricted {
+            Task {
+                await fetchIPBasedLocation()
+            }
+        }
+    }
+    
+    private func setupIPLocationMonitoring() {
+        // Listen for IP address changes
+        NotificationCenter.default.publisher(for: .ipAddressChanged)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.handleIPChange()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Listen for network path changes
+        NotificationCenter.default.publisher(for: .networkPathChanged)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    // Only update if using IP location
+                    if self?.isUsingIPLocation == true {
+                        await self?.fetchIPBasedLocation()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Listen for VPN status changes
+        NotificationCenter.default.publisher(for: .vpnStatusChanged)
+            .sink { [weak self] notification in
+                Task { @MainActor in
+                    if self?.isUsingIPLocation == true {
+                        let isVPNActive = notification.userInfo?["isActive"] as? Bool ?? false
+                        print("VPN status changed to: \(isVPNActive)")
+                        await self?.fetchIPBasedLocation()
+                    }
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func requestLocationPermission() {
@@ -83,6 +132,52 @@ class LocationService: NSObject, ObservableObject {
         isUpdatingLocation = true
         locationError = nil
         locationManager.requestLocation()
+    }
+    
+    func requestAlwaysAuthorization() -> Bool {
+        switch authorizationStatus {
+        case .authorizedWhenInUse:
+            // Can upgrade from WhenInUse to Always
+            print("Requesting Always authorization upgrade from When In Use")
+            locationManager.requestAlwaysAuthorization()
+            return true
+        case .notDetermined:
+            // First request WhenInUse, then Always
+            print("Requesting When In Use authorization first")
+            locationManager.requestWhenInUseAuthorization()
+            // The Always request will be made after WhenInUse is granted
+            return false
+        case .authorizedAlways:
+            // Already have Always permission
+            print("Already have Always authorization, enabling background updates")
+            enableBackgroundLocationUpdates()
+            return true
+        case .denied, .restricted:
+            // Can't request if denied or restricted
+            print("Location permission denied or restricted")
+            locationError = authorizationStatus == .denied ? .denied : .restricted
+            return false
+        @unknown default:
+            locationError = .unknown
+            return false
+        }
+    }
+    
+    private func enableBackgroundLocationUpdates() {
+        // Enable background location updates for leave-home detection
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
+        
+        // Start monitoring significant location changes for power efficiency
+        locationManager.startMonitoringSignificantLocationChanges()
+    }
+    
+    func hasAlwaysPermission() -> Bool {
+        return authorizationStatus == .authorizedAlways
+    }
+    
+    func hasLocationPermission() -> Bool {
+        return authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
     }
     
     func getCurrentLocation() async throws -> CLLocation? {
@@ -153,6 +248,11 @@ class LocationService: NSObject, ObservableObject {
     func setModelContext(_ context: ModelContext) {
         self.modelContext = context
         loadCachedLocation()
+        
+        // Start IP monitoring if location is denied
+        if authorizationStatus == .denied || authorizationStatus == .restricted {
+            ipLocationService.startMonitoring()
+        }
     }
     
     private func loadCachedLocation() {
@@ -169,6 +269,75 @@ class LocationService: NSObject, ObservableObject {
                 longitude: cachedLocation.longitude
             )
         }
+    }
+    
+    // MARK: - IP-Based Location Methods
+    
+    private func fetchIPBasedLocation() async {
+        isUpdatingLocation = true
+        isUsingIPLocation = true
+        
+        guard let ipInfo = await ipLocationService.fetchCurrentLocation() else {
+            isUpdatingLocation = false
+            locationError = .locationUnavailable
+            return
+        }
+        
+        // Create location from IP info
+        let location = CLLocation(
+            latitude: ipInfo.latitude,
+            longitude: ipInfo.longitude
+        )
+        
+        self.currentLocation = location
+        
+        // Determine location type based on VPN status
+        let locationType: LocationType = ipInfo.isVPN ? .vpn : .approximate
+        
+        // Create location data
+        let locationData = LocationData(
+            latitude: ipInfo.latitude,
+            longitude: ipInfo.longitude,
+            cityName: ipInfo.city,
+            regionName: ipInfo.region,
+            countryName: ipInfo.country,
+            isManuallySet: false,
+            locationType: locationType,
+            isVPN: ipInfo.isVPN,
+            ipAddress: ipInfo.ip
+        )
+        
+        self.currentLocationData = locationData
+        
+        // Save to SwiftData
+        if let context = modelContext {
+            // Remove old location data
+            let descriptor = FetchDescriptor<LocationData>()
+            if let existingData = try? context.fetch(descriptor) {
+                for data in existingData {
+                    context.delete(data)
+                }
+            }
+            
+            context.insert(locationData)
+            try? context.save()
+        }
+        
+        isUpdatingLocation = false
+        
+        // Notify about location update
+        NotificationCenter.default.post(
+            name: .locationUpdatedViaIP,
+            object: location,
+            userInfo: ["isVPN": ipInfo.isVPN]
+        )
+    }
+    
+    private func handleIPChange() async {
+        guard isUsingIPLocation else { return }
+        
+        print("Handling IP address change")
+        await fetchIPBasedLocation()
     }
     
     func startMonitoringSignificantLocationChanges() {
@@ -228,16 +397,33 @@ class LocationService: NSObject, ObservableObject {
 extension LocationService: CLLocationManagerDelegate {
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
+            let previousStatus = self.authorizationStatus
             self.authorizationStatus = manager.authorizationStatus
             
+            print("Location authorization changed from \(previousStatus) to \(manager.authorizationStatus)")
+            
             switch manager.authorizationStatus {
-            case .authorizedAlways, .authorizedWhenInUse:
+            case .authorizedAlways:
+                // When we get Always permission, enable background updates
+                enableBackgroundLocationUpdates()
                 requestLocation()
-            case .denied:
-                locationError = .denied
-            case .restricted:
-                locationError = .restricted
-            default:
+                isUsingIPLocation = false
+                ipLocationService.stopMonitoring()
+                print("Always authorization granted - enabled background updates")
+            case .authorizedWhenInUse:
+                requestLocation()
+                isUsingIPLocation = false
+                ipLocationService.stopMonitoring()
+                print("When In Use authorization granted")
+            case .denied, .restricted:
+                // Fall back to IP-based location
+                locationError = manager.authorizationStatus == .denied ? .denied : .restricted
+                await fetchIPBasedLocation()
+                ipLocationService.startMonitoring()
+                print("Location authorization denied/restricted - falling back to IP location")
+            case .notDetermined:
+                print("Location authorization not determined")
+            @unknown default:
                 break
             }
         }

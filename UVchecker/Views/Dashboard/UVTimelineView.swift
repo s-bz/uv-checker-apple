@@ -51,7 +51,7 @@ struct UVTimelineView: View {
                         ForEach(Array(hourlyData.prefix(24).enumerated()), id: \.element.hour) { index, hourData in
                             TimelineSegment(
                                 hourData: hourData,
-                                hour: index,
+                                hour: Calendar.current.component(.hour, from: hourData.hour),
                                 isSelected: isHourSelected(hourData.hour),
                                 isPast: isPastHour(hourData.hour),
                                 isCurrentHour: isCurrentHour(hourData.hour)
@@ -64,15 +64,19 @@ struct UVTimelineView: View {
                                 let impact = UIImpactFeedbackGenerator(style: .light)
                                 impact.impactOccurred()
                             }
-                            .id(index)
+                            .id(hourData.hour)
                         }
                     }
                     .padding(.horizontal)
                 }
                 .onAppear {
-                    // Scroll to current hour on appear
-                    if let currentIndex = getCurrentHourIndex() {
-                        proxy.scrollTo(currentIndex, anchor: .center)
+                    // Scroll to current hour on appear with a slight delay to ensure layout is ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        if let currentHourData = getCurrentHourData() {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(currentHourData.hour, anchor: .leading)
+                            }
+                        }
                     }
                 }
             }
@@ -86,7 +90,7 @@ struct UVTimelineView: View {
                 )
             }
         }
-        .padding()
+        .padding(16)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
     }
@@ -109,6 +113,11 @@ struct UVTimelineView: View {
         return hourlyData.firstIndex { hourData in
             Calendar.current.component(.hour, from: hourData.hour) == currentHour
         }
+    }
+    
+    private func getCurrentHourData() -> HourlyUVData? {
+        let currentHour = Date()
+        return hourlyData.min(by: { abs($0.hour.timeIntervalSince(currentHour)) < abs($1.hour.timeIntervalSince(currentHour)) })
     }
     
     private func formattedTime(_ date: Date) -> String {
