@@ -97,15 +97,19 @@ class PostHogManager: ObservableObject {
         let skinType = UserDefaults.standard.integer(forKey: "selectedSkinType")
         
         // Only include non-PII properties
-        let properties: [String: Any] = [
+        var properties: [String: Any] = [
             "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
             "platform": "iOS",
             "created_at": ISO8601DateFormatter().string(from: Date()),
-            "skin_type": skinType > 0 ? skinType : nil,
             "has_completed_onboarding": UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"),
             "notification_enabled": UserDefaults.standard.bool(forKey: "notificationPermissionGranted"),
             "location_permission": UserDefaults.standard.string(forKey: "locationAuthorizationStatus") ?? "unknown"
-        ].compactMapValues { $0 }
+        ]
+        
+        // Only include skin_type if it's set (> 0)
+        if skinType > 0 {
+            properties["skin_type"] = skinType
+        }
         
         posthog?.identify(userId, userProperties: properties)
         logger.info("User identified with anonymous ID")
