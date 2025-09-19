@@ -17,6 +17,7 @@ struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var weatherService = WeatherKitService.shared
     @StateObject private var locationService = LocationService.shared
+    @EnvironmentObject private var postHogManager: PostHogManager
     private let notificationService = NotificationService.shared
     
     @Query(sort: \SkinProfile.createdAt, order: .reverse) private var skinProfiles: [SkinProfile]
@@ -89,12 +90,16 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingSettings = true }) {
+                    Button(action: { 
+                        showingSettings = true
+                        postHogManager.capture(PostHogEvents.Settings.opened)
+                    }) {
                         Image(systemName: "gearshape")
                     }
                 }
             }
             .refreshable {
+                postHogManager.capture(PostHogEvents.UV.dataFetched, properties: ["source": "pull_refresh"])
                 await refreshData()
             }
             .sheet(isPresented: $showingSunscreenSheet) {
@@ -155,6 +160,9 @@ struct DashboardView: View {
             .task {
                 await initialLoad()
                 await checkNotificationPermission()
+            }
+            .onAppear {
+                postHogManager.screen("Dashboard")
             }
             .onReceive(NotificationCenter.default.publisher(for: .locationUpdatedViaIP)) { notification in
                 Task {
@@ -263,6 +271,15 @@ struct DashboardView: View {
                     locationName: locationData.displayName,
                     modelContext: modelContext
                 )
+                
+                // Track UV data fetch
+                if let uvData = weatherService.currentUVData {
+                    postHogManager.capture(PostHogEvents.UV.dataFetched, properties: [
+                        "source": "initial_load",
+                        "uv_index": uvData.uvIndex,
+                        "uv_level": uvData.uvLevel.description
+                    ])
+                }
             }
         } else if locationService.authorizationStatus == .denied || 
                   locationService.authorizationStatus == .restricted {
@@ -314,6 +331,13 @@ struct DashboardView: View {
         
         modelContext.insert(application)
         try? modelContext.save()
+        
+        // Track sunscreen application
+        postHogManager.capture(PostHogEvents.Sunscreen.applied, properties: [
+            "spf": spf,
+            "quantity": quantity.rawValue
+        ])
+        postHogManager.incrementUserProperty("sunscreen_applications_count")
         
         // Update widget data
         updateWidgetData()

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A23B97ED2E7DB9AE00FC6116 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = A23B97EC2E7DB9AE00FC6116 /* PostHog */; };
 		A2B382862E7C7B7C0024F1FA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2B382852E7C7B7C0024F1FA /* WidgetKit.framework */; };
 		A2B382882E7C7B7C0024F1FA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2B382872E7C7B7C0024F1FA /* SwiftUI.framework */; };
 		A2B382992E7C7B7D0024F1FA /* WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A2B382832E7C7B7C0024F1FA /* WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -71,6 +72,7 @@
 		A2B383E32E7D381D0024F1FA /* Exceptions for "UVSense" folder in "UVSense" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Config/Secrets.xcconfig.template,
 				Info.plist,
 			);
 			target = A2B381E72E7C53850024F1FA /* UVSense */;
@@ -111,6 +113,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A23B97ED2E7DB9AE00FC6116 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -195,6 +198,7 @@
 			);
 			name = UVSense;
 			packageProductDependencies = (
+				A23B97EC2E7DB9AE00FC6116 /* PostHog */,
 			);
 			productName = UVSense;
 			productReference = A2B381E82E7C53850024F1FA /* UVSense.app */;
@@ -303,6 +307,9 @@
 			);
 			mainGroup = A2B381DF2E7C53850024F1FA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A23B97EB2E7DB9AE00FC6116 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A2B381E92E7C53850024F1FA /* Products */;
 			projectDirPath = "";
@@ -853,6 +860,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A23B97EB2E7DB9AE00FC6116 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.31.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A23B97EC2E7DB9AE00FC6116 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A23B97EB2E7DB9AE00FC6116 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A2B381E02E7C53850024F1FA /* Project object */;
 }

@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct UVSenseApp: App {
+    @StateObject private var postHogManager = PostHogManager.shared
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -30,10 +32,29 @@ struct UVSenseApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+    
+    init() {
+        // Initialize PostHog early
+        _ = PostHogManager.shared
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(postHogManager)
+                .task {
+                    // Track app launch
+                    postHogManager.capture(PostHogEvents.App.launched)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                    // Track app foregrounded
+                    postHogManager.capture(PostHogEvents.App.foregrounded)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+                    // Track app backgrounded
+                    postHogManager.capture(PostHogEvents.App.backgrounded)
+                    postHogManager.flush()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

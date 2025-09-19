@@ -89,6 +89,14 @@ fastlane/test_output
 
 iOSInjectionProject/
 
+# Configuration and Secrets
+Secrets.xcconfig
+Secrets.local.xcconfig
+UVSense/Config/Secrets.xcconfig
+UVSense/Config/Secrets.local.xcconfig
+AnalyticsConfig.local.plist
+UVSense/Config/AnalyticsConfig.local.plist
+
 # macOS
 .DS_Store
 .AppleDouble
