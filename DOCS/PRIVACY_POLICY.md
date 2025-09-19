@@ -8,7 +8,9 @@ UV Sense ("we", "our", or "app") is committed to protecting your privacy. This P
 
 ## Our Privacy Commitment
 
-UV Sense is designed with privacy as a fundamental principle. **We do not collect, store, or transmit any personal data to external servers.** All your data remains on your device.
+UV Sense is designed with privacy as a fundamental principle. **We do not collect, store, or transmit any personal data to external servers.** All your personal data remains on your device. 
+
+When analytics are enabled (optional and disabled by default), we collect only anonymous usage data to improve the app. No personal information is ever collected.
 
 ## Information We Access
 
@@ -31,6 +33,14 @@ UV Sense is designed with privacy as a fundamental principle. **We do not collec
 - **Storage**: Stored locally on your device
 - **Sharing**: Never shared externally
 
+### 4. Anonymous Analytics (Optional)
+- **What we collect**: Anonymous app usage patterns, feature interactions, and error reports
+- **Why we collect it**: To understand how users interact with the app and improve features
+- **What's NOT collected**: No personal information, location data, or screen content
+- **Control**: Analytics are disabled by default and can be toggled in Settings → Privacy
+- **Anonymity**: All data is completely anonymous and cannot be traced back to you
+- **Opt-out**: Can be disabled at any time without affecting app functionality
+
 ## Third-Party Services
 
 ### Apple WeatherKit
@@ -44,6 +54,13 @@ UV Sense is designed with privacy as a fundamental principle. **We do not collec
 - This service (ip-api.com) receives only your IP address
 - No personal information is transmitted
 - This is used solely to provide approximate UV data when precise location is unavailable
+
+### PostHog Analytics (Optional)
+- When analytics are enabled, anonymous usage data is processed by PostHog
+- PostHog is a privacy-focused analytics platform
+- Only anonymous, non-personal data is transmitted
+- For more information, see [PostHog's Privacy Policy](https://posthog.com/privacy)
+- Can be completely disabled in app settings
 
 ## Data Storage
 

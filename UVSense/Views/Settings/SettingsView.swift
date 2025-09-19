@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var showingSkinProfile = false
     @State private var showingReleaseNotes = false
     @State private var showingAnalyticsInfo = false
+    @State private var showingAcknowledgments = false
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @AppStorage("hasProfile") private var hasProfile = false
@@ -209,6 +210,20 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    
+                    Button(action: { showingAcknowledgments = true }) {
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.red)
+                                .frame(width: 28)
+                            Text("Acknowledgments")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 } header: {
                     Text("About")
                 } footer: {
@@ -240,6 +255,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingAnalyticsInfo) {
                 AnalyticsInfoView()
+            }
+            .sheet(isPresented: $showingAcknowledgments) {
+                AcknowledgmentsView()
             }
             .alert("Enable Location Access", isPresented: $showingLocationUpgradeAlert) {
                 Button("Open Settings") {
