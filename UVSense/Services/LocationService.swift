@@ -198,19 +198,31 @@ class LocationService: NSObject, ObservableObject {
     }
     
     private func geocodeLocation(_ location: CLLocation, isManual: Bool = false, modelContext: ModelContext? = nil) async {
-        // Use CLGeocoder for now until we find the proper MapKit replacement
-        let geocoder = CLGeocoder()
+        // Use MapKit's MKReverseGeocodingRequest (iOS 26.0+)
+        guard let request = MKReverseGeocodingRequest(location: location) else {
+            print("Failed to create reverse geocoding request for location: \(location)")
+            return
+        }
         
         do {
-            let placemarks = try await geocoder.reverseGeocodeLocation(location)
+            let mapItems = try await request.mapItems
             
-            if let placemark = placemarks.first {
+            if let mapItem = mapItems.first {
+                // Use the new address properties (iOS 26.0+)
+                // MKAddress provides simple address strings, MKAddressRepresentations provides more detailed info
+                let addressRep = mapItem.addressRepresentations
+                let address = mapItem.address
+                
+                // Extract location components from available properties
+                let cityName = addressRep?.cityName ?? mapItem.name ?? "Unknown"
+                let regionName = addressRep?.regionName ?? address?.fullAddress ?? ""
+                
                 let locationData = LocationData(
                     latitude: location.coordinate.latitude,
                     longitude: location.coordinate.longitude,
-                    cityName: placemark.locality ?? placemark.name ?? "Unknown",
-                    regionName: placemark.administrativeArea,
-                    countryName: placemark.country ?? "Unknown",
+                    cityName: cityName,
+                    regionName: regionName.isEmpty ? nil : regionName,
+                    countryName: "Unknown", // Country not directly available in new API
                     isManuallySet: isManual
                 )
                 
