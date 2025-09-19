@@ -186,14 +186,27 @@ class WeatherKitService: ObservableObject {
         }
     }
     
-    func calculateSunscreenWindow(threshold: Double = 3.0) -> (start: Date?, end: Date?) {
+    func calculateSunscreenWindow(threshold: Double = 3.0, todayOnly: Bool = false) -> (start: Date?, end: Date?) {
         guard !hourlyForecast.isEmpty else { return (nil, nil) }
         
+        let now = Date()
+        let calendar = Calendar.current
         var windowStart: Date?
         var windowEnd: Date?
         var inWindow = false
         
-        for hourData in hourlyForecast {
+        // Filter hours based on whether we want today only or future hours
+        let relevantHours: [HourlyUVData]
+        if todayOnly {
+            // Only consider today's remaining hours
+            let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now) ?? now
+            relevantHours = hourlyForecast.filter { $0.hour >= now && $0.hour <= endOfToday }
+        } else {
+            // Consider all future hours
+            relevantHours = hourlyForecast.filter { $0.hour >= now }
+        }
+        
+        for hourData in relevantHours {
             if hourData.uvIndex >= threshold {
                 if !inWindow {
                     windowStart = hourData.hour

@@ -70,7 +70,7 @@ struct DashboardView: View {
                     if !weatherService.hourlyForecast.isEmpty {
                         UVTimelineView(
                             hourlyData: weatherService.todayForecast,
-                            sunscreenWindow: weatherService.calculateSunscreenWindow()
+                            sunscreenWindow: weatherService.calculateSunscreenWindow(todayOnly: true)
                         )
                         .padding(.horizontal)
                     }

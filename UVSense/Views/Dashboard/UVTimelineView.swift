@@ -20,16 +20,24 @@ struct UVTimelineView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
-            Text("24-Hour Forecast")
+            Text("Today's Weather")
                 .font(.headline)
             
             // Sunscreen Window - only show when relevant (before or during window)
+            // AND only if window is today or in the future
             if let start = sunscreenWindow.start,
                let end = sunscreenWindow.end {
                 let now = Date()
+                let calendar = Calendar.current
                 
-                // Only show if we haven't passed the window yet
-                if now < end {
+                // Check if the window is for today
+                let isWindowToday = calendar.isDateInToday(start) || calendar.isDateInToday(end)
+                
+                // Check if window is in the future (tomorrow's forecast)
+                let isWindowFuture = start > now
+                
+                // Only show if we haven't passed the window yet AND it's relevant (today or future)
+                if now < end && (isWindowToday || isWindowFuture) {
                     HStack {
                         Image(systemName: "sun.max.trianglebadge.exclamationmark")
                             .foregroundColor(.orange)
@@ -60,7 +68,7 @@ struct UVTimelineView: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 2) {
-                        ForEach(Array(hourlyData.prefix(24).enumerated()), id: \.element.hour) { index, hourData in
+                        ForEach(Array(hourlyData.enumerated()), id: \.element.hour) { index, hourData in
                             TimelineSegment(
                                 hourData: hourData,
                                 hour: Calendar.current.component(.hour, from: hourData.hour),
