@@ -1,0 +1,56 @@
+# Fastlane configuration for UV Sense
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload metadata to App Store Connect"
+  lane :upload_metadata do
+    app_store_connect_api_key(
+      key_id: "8VSJP9VH9U",
+      issuer_id: "96360dc0-b595-4e99-97d8-0f5672d1f012",
+      key_filepath: "./fastlane/AuthKey_8VSJP9VH9U.p8"
+    )
+    
+    deliver(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_app_version_update: true,
+      force: true,
+      precheck_include_in_app_purchases: false,
+      metadata_path: "./fastlane/metadata"
+    )
+  end
+
+  desc "Download existing metadata from App Store Connect"
+  lane :download_metadata do
+    app_store_connect_api_key(
+      key_id: "8VSJP9VH9U",
+      issuer_id: "96360dc0-b595-4e99-97d8-0f5672d1f012",
+      key_filepath: "./fastlane/AuthKey_8VSJP9VH9U.p8"
+    )
+    
+    deliver(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      download_metadata: true,
+      force: true,
+      metadata_path: "./fastlane/metadata"
+    )
+  end
+
+  desc "Validate metadata without uploading"
+  lane :validate_metadata do
+    app_store_connect_api_key(
+      key_id: "8VSJP9VH9U",
+      issuer_id: "96360dc0-b595-4e99-97d8-0f5672d1f012",
+      key_filepath: "./fastlane/AuthKey_8VSJP9VH9U.p8"
+    )
+    
+    deliver(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      verify_only: true,
+      metadata_path: "./fastlane/metadata"
+    )
+  end
+end

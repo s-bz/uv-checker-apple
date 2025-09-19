@@ -1,0 +1,23 @@
+Initial release of UV Sense!
+
+FEATURES
+• Real-time UV index monitoring with 24-hour forecast
+• Personalized burn time calculations based on skin type
+• Smart leave-home reminders when UV is high
+• Sunscreen tracking with reapplication alerts
+• Beautiful home screen widget
+• Privacy-first design - all data stays on your device
+
+PRIVACY
+• No account required
+• All personal data stored locally
+• Location never shared
+• Optional anonymous analytics (disabled by default)
+
+COMPATIBILITY
+• Designed for iOS 17.0 and later
+• Optimized for all iPhone models
+• Full accessibility support
+• Dark mode included
+
+Thank you for downloading UV Sense! Stay safe under the sun.

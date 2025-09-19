@@ -1,0 +1,10 @@
+# Appfile for UV Sense
+
+# App Information
+app_identifier("com.infuseproduct.UVchecker")
+
+# Team Information
+team_id("YH2Y8LT5HT")
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
