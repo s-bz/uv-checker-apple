@@ -327,6 +327,34 @@ struct PostHogEvents {
         static let tapped = "widget_tapped"
         static let updated = "widget_updated"
         static let configurationChanged = "widget_configuration_changed"
+        static let added = "widget_added"
+        static let removed = "widget_removed"
+        static let refreshed = "widget_refreshed"
+    }
+    
+    struct Clicks {
+        static let refreshData = "click_refresh_data"
+        static let applySunscreen = "click_apply_sunscreen"
+        static let removeSunscreen = "click_remove_sunscreen"
+        static let openSettings = "click_open_settings"
+        static let viewUVInfo = "click_view_uv_info"
+        static let selectTimelineHour = "click_select_timeline_hour"
+        static let expandTomorrowWeather = "click_expand_tomorrow_weather"
+        static let dismissNotification = "click_dismiss_notification"
+        static let acceptLocationPermission = "click_accept_location_permission"
+        static let denyLocationPermission = "click_deny_location_permission"
+    }
+    
+    struct Views {
+        static let dashboard = "view_dashboard"
+        static let onboarding = "view_onboarding"
+        static let settings = "view_settings"
+        static let skinProfile = "view_skin_profile"
+        static let sunscreenSheet = "view_sunscreen_sheet"
+        static let uvTimeline = "view_uv_timeline"
+        static let tomorrowWeather = "view_tomorrow_weather"
+        static let locationPermission = "view_location_permission"
+        static let notificationPermission = "view_notification_permission"
     }
     
     struct Error {

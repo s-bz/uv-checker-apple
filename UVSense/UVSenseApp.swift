@@ -45,6 +45,12 @@ struct UVSenseApp: App {
                 .task {
                     // Track app launch
                     postHogManager.capture(PostHogEvents.App.launched)
+                    
+                    // Check if widget was viewed
+                    if UserDefaults.standard.bool(forKey: "widget_viewed") {
+                        postHogManager.capture(PostHogEvents.Widget.viewed)
+                        UserDefaults.standard.removeObject(forKey: "widget_viewed")
+                    }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                     // Track app foregrounded
@@ -54,6 +60,12 @@ struct UVSenseApp: App {
                     // Track app backgrounded
                     postHogManager.capture(PostHogEvents.App.backgrounded)
                     postHogManager.flush()
+                }
+                .onOpenURL { url in
+                    // Handle widget URL
+                    if url.scheme == "uvsense" && url.host == "widget" {
+                        postHogManager.capture(PostHogEvents.Widget.tapped)
+                    }
                 }
         }
         .modelContainer(sharedModelContainer)

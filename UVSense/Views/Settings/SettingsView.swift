@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var notificationService: NotificationService
+    @EnvironmentObject private var postHogManager: PostHogManager
     
     @State private var remindersEnabled = false
     @State private var showingLocationUpgradeAlert = false
@@ -40,6 +41,10 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: remindersEnabled) { oldValue, newValue in
+                        postHogManager.capture(PostHogEvents.Settings.notificationsToggled, properties: [
+                            "enabled": newValue
+                        ])
+                        
                         if newValue {
                             enableReminders()
                         } else {
@@ -212,6 +217,10 @@ struct SettingsView: View {
         }
         .task {
             await checkPermissions()
+        }
+        .onAppear {
+            postHogManager.capture(PostHogEvents.Views.settings)
+            postHogManager.screen("Settings")
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             Task {

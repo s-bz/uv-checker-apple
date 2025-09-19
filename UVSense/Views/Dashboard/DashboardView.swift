@@ -92,6 +92,7 @@ struct DashboardView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { 
                         showingSettings = true
+                        postHogManager.capture(PostHogEvents.Clicks.openSettings)
                         postHogManager.capture(PostHogEvents.Settings.opened)
                     }) {
                         Image(systemName: "gearshape")
@@ -99,6 +100,7 @@ struct DashboardView: View {
                 }
             }
             .refreshable {
+                postHogManager.capture(PostHogEvents.Clicks.refreshData)
                 postHogManager.capture(PostHogEvents.UV.dataFetched, properties: ["source": "pull_refresh"])
                 await refreshData()
             }
@@ -162,6 +164,7 @@ struct DashboardView: View {
                 await checkNotificationPermission()
             }
             .onAppear {
+                postHogManager.capture(PostHogEvents.Views.dashboard)
                 postHogManager.screen("Dashboard")
             }
             .onReceive(NotificationCenter.default.publisher(for: .locationUpdatedViaIP)) { notification in
@@ -333,6 +336,7 @@ struct DashboardView: View {
         try? modelContext.save()
         
         // Track sunscreen application
+        postHogManager.capture(PostHogEvents.Clicks.applySunscreen)
         postHogManager.capture(PostHogEvents.Sunscreen.applied, properties: [
             "spf": spf,
             "quantity": quantity.rawValue

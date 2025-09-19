@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TomorrowWeatherView: View {
     let hourlyData: [HourlyUVData]
+    @EnvironmentObject private var postHogManager: PostHogManager
     
     private var maxUV: Double {
         hourlyData.map { $0.uvIndex }.max() ?? 0
@@ -110,6 +111,13 @@ struct TomorrowWeatherView: View {
         .padding()
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
+        .onAppear {
+            postHogManager.capture(PostHogEvents.Views.tomorrowWeather, properties: [
+                "max_uv": maxUV,
+                "weather_condition": weatherCondition,
+                "has_sunscreen_window": findSunscreenWindow() != nil
+            ])
+        }
     }
     
     private func findSunscreenWindow() -> String? {

@@ -110,20 +110,27 @@ struct UVWidgetEntryView : View {
     var entry: UVProvider.Entry
 
     var body: some View {
-        switch widgetFamily {
-        case .systemSmall:
-            SmallWidgetView(entry: entry)
-        case .systemMedium:
-            MediumWidgetView(entry: entry)
-        case .accessoryRectangular:
-            AccessoryRectangularView(entry: entry)
-        case .accessoryCircular:
-            AccessoryCircularView(entry: entry)
-        case .accessoryInline:
-            AccessoryInlineView(entry: entry)
-        default:
-            SmallWidgetView(entry: entry)
+        Group {
+            switch widgetFamily {
+            case .systemSmall:
+                SmallWidgetView(entry: entry)
+            case .systemMedium:
+                MediumWidgetView(entry: entry)
+            case .accessoryRectangular:
+                AccessoryRectangularView(entry: entry)
+            case .accessoryCircular:
+                AccessoryCircularView(entry: entry)
+            case .accessoryInline:
+                AccessoryInlineView(entry: entry)
+            default:
+                SmallWidgetView(entry: entry)
+            }
         }
+        .onAppear {
+            // Track widget view
+            UserDefaults.standard.set(true, forKey: "widget_viewed")
+        }
+        .widgetURL(URL(string: "uvsense://widget")!)
     }
 }
 
