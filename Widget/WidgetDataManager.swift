@@ -35,7 +35,7 @@ class WidgetDataManager {
     static let shared = WidgetDataManager()
     
     // App Group identifier - must match in both app and widget entitlements
-    private let appGroupIdentifier = "group.com.infuseproduct.UVchecker"
+    private let appGroupIdentifier = "group.com.infuseproduct.UVSense"
     
     private var sharedDefaults: UserDefaults? {
         UserDefaults(suiteName: appGroupIdentifier)

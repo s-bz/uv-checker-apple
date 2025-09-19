@@ -8,6 +8,6 @@
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
 	<key>CFBundleDisplayName</key>
-	<string>UV Index</string>
+	<string>UV Sense</string>
 </dict>
 </plist>
