@@ -115,8 +115,6 @@ struct UVWidgetEntryView : View {
             SmallWidgetView(entry: entry)
         case .systemMedium:
             MediumWidgetView(entry: entry)
-        case .systemLarge:
-            LargeWidgetView(entry: entry)
         case .accessoryRectangular:
             AccessoryRectangularView(entry: entry)
         case .accessoryCircular:
@@ -134,48 +132,96 @@ struct SmallWidgetView: View {
     let entry: UVWidgetEntry
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header
+        VStack(alignment: .leading, spacing: 2) {
+            // Header row with location and temp - like Apple Weather
             HStack {
-                Image(systemName: entry.uvLevel.icon)
-                    .font(.title2)
-                    .foregroundColor(entry.uvLevel.color)
-                Spacer()
-                if entry.isDataStale {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                }
-            }
-            
-            // UV Index
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(Int(entry.uvIndex))")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundColor(entry.uvLevel.color)
-                
-                Text(entry.uvLevel.rawValue)
-                    .font(.headline)
+                Text(entry.location.components(separatedBy: ",").first ?? entry.location)
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.primary)
-            }
-            
-            Spacer()
-            
-            // Bottom info
-            VStack(alignment: .leading, spacing: 2) {
-                if entry.configuration.showBurnTime, let burnTime = entry.burnTime {
-                    Label("\(burnTime) min", systemImage: "timer")
-                        .font(.caption)
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                if let temp = entry.temperature {
+                    Text("\(Int(temp))°")
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
+            }
+            
+            // UV Index and Level on same line
+            HStack(alignment: .bottom, spacing: 8) {
+                Text("\(Int(entry.uvIndex))")
+                    .font(.system(size: 48, weight: .light, design: .rounded))
+                    .foregroundColor(entry.uvLevel.color)
+                    .minimumScaleFactor(0.7)
                 
-                Label(entry.location, systemImage: "location.fill")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(entry.uvLevel.rawValue)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundColor(entry.uvLevel.color)
+                        .lineLimit(1)
+                    Text("UV")
+                        .font(.system(size: 17, weight: .medium))  // Same style as "Low"
+                        .foregroundColor(entry.uvLevel.color)
+                }
+                .padding(.bottom, 6) // Better alignment with number baseline
+                
+                Spacer()
+            }
+            
+            Spacer(minLength: 0)
+            
+            // Bottom info - with multiline support
+            VStack(alignment: .leading, spacing: 3) {
+                // Protection status - larger font and multiline
+                if entry.configuration.showBurnTime, let burnTimeText = entry.formattedBurnTime() {
+                    if entry.sunscreenActive, let spf = entry.sunscreenSPF {
+                        // Show sunscreen protection with expiry time
+                        if let burnTime = entry.burnTime {
+                            let protectedUntil = Date().addingTimeInterval(TimeInterval(burnTime * 60))
+                            Text("Protected by SPF\(spf) until \(protectedUntil, style: .time)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.green)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text("Protected by SPF\(spf)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.green)
+                        }
+                    } else if burnTimeText == "Safe without sunscreen" {
+                        Text("Protected")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.green)
+                    } else {
+                        // Show when sunscreen is needed
+                        if entry.uvIndex >= 3, let burnTime = entry.burnTime {
+                            let needsSunscreenUntil = Date().addingTimeInterval(TimeInterval(burnTime * 60))
+                            Text("Sunscreen needed until \(needsSunscreenUntil, style: .time)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.orange)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            HStack(spacing: 2) {
+                                Image(systemName: "timer")
+                                    .font(.system(size: 10))
+                                Text(burnTimeText.replacingOccurrences(of: " min", with: "m"))
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(entry.burnTime ?? 60 < 30 ? .orange : .secondary)
+                        }
+                    }
+                }
+                
+                // Last updated
+                Text("Updated \(entry.date, style: .time)")
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary.opacity(0.7))
             }
         }
-        .padding()
+        .padding(6) // Minimal padding like Apple Weather widget
     }
 }
 
@@ -184,69 +230,148 @@ struct MediumWidgetView: View {
     let entry: UVWidgetEntry
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             // Left side - UV Info
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                // Location and temp header
                 HStack {
-                    Image(systemName: entry.uvLevel.icon)
-                        .font(.title2)
-                        .foregroundColor(entry.uvLevel.color)
+                    Text(entry.location.components(separatedBy: ",").first ?? entry.location)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    Spacer()
                     
                     if let temp = entry.temperature {
                         Text("\(Int(temp))°")
-                            .font(.headline)
+                            .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
                 }
                 
-                VStack(alignment: .leading, spacing: 2) {
+                // UV Index and Level with bottom alignment
+                HStack(alignment: .bottom, spacing: 6) {
                     Text("\(Int(entry.uvIndex))")
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .font(.system(size: 42, weight: .light, design: .rounded))
                         .foregroundColor(entry.uvLevel.color)
+                        .minimumScaleFactor(0.8)
                     
-                    Text(entry.uvLevel.rawValue)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(entry.uvLevel.rawValue)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(entry.uvLevel.color)
+                            .lineLimit(1)
+                        Text("UV")
+                            .font(.system(size: 15, weight: .medium))  // Same style as level text
+                            .foregroundColor(entry.uvLevel.color)
+                    }
+                    .padding(.bottom, 5) // Better alignment with number baseline
                 }
                 
-                Spacer()
+                Spacer(minLength: 2)
                 
-                Label(entry.location, systemImage: "location.fill")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                Text("Updated \(entry.date, style: .time)")
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary.opacity(0.6))
             }
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             
             Divider()
+                .padding(.vertical, 4)
             
             // Right side - Recommendations
-            VStack(alignment: .leading, spacing: 12) {
-                Text(entry.uvLevel.recommendation)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                
-                if entry.configuration.showBurnTime, let burnTime = entry.burnTime {
-                    HStack {
-                        Image(systemName: "timer")
-                            .font(.caption)
-                        Text("Burn: \(burnTime) min")
-                            .font(.caption)
+            VStack(alignment: .leading, spacing: 6) {
+                // Show recommendation based on burn time and sunscreen status
+                if entry.configuration.showBurnTime, let burnTimeText = entry.formattedBurnTime() {
+                    if entry.sunscreenActive, let spf = entry.sunscreenSPF {
+                        // Show sunscreen protection with expiry time
+                        Text("Protected by SPF\(spf)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        if let burnTime = entry.burnTime {
+                            let protectedUntil = Date().addingTimeInterval(TimeInterval(burnTime * 60))
+                            HStack(spacing: 3) {
+                                Image(systemName: "checkmark.shield.fill")
+                                    .font(.system(size: 10))
+                                Text("Until \(protectedUntil, style: .time)")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(.green)
+                        } else {
+                            HStack(spacing: 3) {
+                                Image(systemName: "checkmark.shield.fill")
+                                    .font(.system(size: 10))
+                                Text("Active")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(.green)
+                        }
+                    } else if burnTimeText == "Safe without sunscreen" {
+                        Text("No protection needed")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                        
+                        HStack(spacing: 3) {
+                            Image(systemName: "checkmark.shield.fill")
+                                .font(.system(size: 10))
+                            Text("Safe")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(.green)
+                    } else {
+                        // Show when sunscreen is needed
+                        if entry.uvIndex >= 3, let burnTime = entry.burnTime {
+                            let needsSunscreenUntil = Date().addingTimeInterval(TimeInterval(burnTime * 60))
+                            
+                            Text("Sunscreen needed")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                            
+                            HStack(spacing: 3) {
+                                Image(systemName: "sun.max.trianglebadge.exclamationmark")
+                                    .font(.system(size: 10))
+                                Text("Until \(needsSunscreenUntil, style: .time)")
+                                    .font(.system(size: 11))
+                            }
+                            .foregroundColor(.orange)
+                        } else {
+                            Text(entry.uvLevel.recommendation)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.primary)
+                                .lineLimit(2)
+                            
+                            HStack(spacing: 3) {
+                                Image(systemName: "timer")
+                                    .font(.system(size: 10))
+                                Text(burnTimeText)
+                                    .font(.system(size: 11))
+                            }
+                            .foregroundColor(entry.burnTime ?? 60 < 30 ? .orange : .secondary)
+                        }
                     }
-                    .foregroundColor(burnTime < 30 ? .orange : .secondary)
+                } else {
+                    Text(entry.uvLevel.recommendation)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
                 }
                 
                 if entry.configuration.showSunscreenStatus {
-                    HStack {
+                    HStack(spacing: 3) {
                         Image(systemName: entry.sunscreenActive ? "checkmark.shield.fill" : "shield.slash")
-                            .font(.caption)
+                            .font(.system(size: 10))
                         if entry.sunscreenActive, let spf = entry.sunscreenSPF {
                             Text("SPF \(spf)")
+                                .font(.system(size: 11))
                         } else {
                             Text("No sunscreen")
+                                .font(.system(size: 11))
                         }
                     }
-                    .font(.caption)
                     .foregroundColor(entry.sunscreenActive ? .green : .orange)
                 }
                 
@@ -254,148 +379,13 @@ struct MediumWidgetView: View {
                 
                 if let nextHigh = entry.nextHighUVTime {
                     Text("High UV at \(nextHigh, style: .time)")
-                        .font(.caption2)
+                        .font(.system(size: 9))
                         .foregroundColor(.secondary)
                 }
             }
-            
-            Spacer()
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         }
-        .padding()
-    }
-}
-
-// Large Widget
-struct LargeWidgetView: View {
-    let entry: UVWidgetEntry
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("UV Index")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    Label(entry.location, systemImage: "location.fill")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                if entry.isDataStale {
-                    Label("Update needed", systemImage: "arrow.clockwise")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                }
-            }
-            
-            // Main UV Display
-            HStack(alignment: .top, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("\(Int(entry.uvIndex))")
-                            .font(.system(size: 72, weight: .bold, design: .rounded))
-                            .foregroundColor(entry.uvLevel.color)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(entry.uvLevel.rawValue.uppercased())
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.secondary)
-                            
-                            if let temp = entry.temperature {
-                                Text("\(Int(temp))°")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                    }
-                    
-                    Image(systemName: entry.uvLevel.icon)
-                        .font(.title)
-                        .foregroundColor(entry.uvLevel.color)
-                }
-                
-                Spacer()
-            }
-            
-            // Recommendation
-            Text(entry.uvLevel.recommendation)
-                .font(.headline)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(entry.uvLevel.color.opacity(0.15))
-                .cornerRadius(8)
-            
-            // Status Grid
-            HStack(spacing: 16) {
-                if entry.configuration.showBurnTime {
-                    StatusCard(
-                        icon: "timer",
-                        title: "Burn Time",
-                        value: entry.burnTime.map { "\($0) min" } ?? "N/A",
-                        color: entry.burnTime ?? 60 < 30 ? .orange : .secondary
-                    )
-                }
-                
-                if entry.configuration.showSunscreenStatus {
-                    StatusCard(
-                        icon: entry.sunscreenActive ? "checkmark.shield.fill" : "shield.slash",
-                        title: "Sunscreen",
-                        value: entry.sunscreenActive && entry.sunscreenSPF != nil ? "SPF \(entry.sunscreenSPF!)" : "Not applied",
-                        color: entry.sunscreenActive ? .green : .orange
-                    )
-                }
-            }
-            
-            Spacer()
-            
-            // Footer
-            HStack {
-                Text("Updated \(entry.date, style: .time)")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                if let nextHigh = entry.nextHighUVTime {
-                    Label("High UV at \(nextHigh, style: .time)", systemImage: "sun.max.fill")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-        .padding()
-    }
-}
-
-struct StatusCard: View {
-    let icon: String
-    let title: String
-    let value: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.caption)
-                    .foregroundColor(color)
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.primary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
-        .background(Color(UIColor.secondarySystemBackground))
-        .cornerRadius(8)
+        .padding(6) // Minimal padding like Apple Weather widget
     }
 }
 
@@ -419,9 +409,15 @@ struct AccessoryRectangularView: View {
             VStack(alignment: .trailing) {
                 Text(entry.uvLevel.rawValue)
                     .font(.caption2)
-                if let burnTime = entry.burnTime {
-                    Text("\(burnTime)m")
-                        .font(.caption.bold())
+                if let burnTimeText = entry.formattedBurnTime() {
+                    // For accessory widget, show abbreviated version
+                    if burnTimeText == "Safe without sunscreen" {
+                        Text("Safe")
+                            .font(.caption.bold())
+                    } else {
+                        Text(burnTimeText.replacingOccurrences(of: " min", with: "m"))
+                            .font(.caption.bold())
+                    }
                 }
             }
         }
@@ -472,7 +468,6 @@ struct UVWidget: Widget {
         .supportedFamilies([
             .systemSmall,
             .systemMedium,
-            .systemLarge,
             .accessoryCircular,
             .accessoryRectangular,
             .accessoryInline
@@ -510,4 +505,39 @@ struct UVWidget: Widget {
         nextHighUVTime: Date(),
         isDataStale: false
     )
+}
+
+// MARK: - Helper Functions
+
+extension UVWidgetEntry {
+    /// Formats burn time in a human-readable format matching the main app
+    func formattedBurnTime() -> String? {
+        guard let burnTime = burnTime else { return nil }
+        
+        if burnTime >= 240 {
+            return "Safe without sunscreen"
+        } else if burnTime >= 60 {
+            let hours = burnTime / 60
+            let minutes = burnTime % 60
+            
+            // Round up to nearest half hour
+            let roundedMinutes: Int
+            if minutes == 0 {
+                roundedMinutes = 0
+            } else if minutes <= 30 {
+                roundedMinutes = 30
+            } else {
+                // Round up to next hour
+                return "\(hours + 1)h"
+            }
+            
+            if roundedMinutes == 0 {
+                return "\(hours)h"
+            } else {
+                return "\(hours)h \(roundedMinutes)m"
+            }
+        } else {
+            return "\(burnTime) min"
+        }
+    }
 }

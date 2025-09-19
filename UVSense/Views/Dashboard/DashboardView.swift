@@ -667,15 +667,28 @@ struct CurrentConditionsCard: View {
                let uvData = uvData,
                uvData.uvIndex > 0 {
                 HStack {
-                    Label("Sunburn within", systemImage: "timer")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                    
-                    Text(burnTime.displayText)
-                        .font(.headline)
-                        .foregroundColor(burnTimeWarningColor(burnTime.warningLevel))
+                    if burnTime.displayText == "Safe without sunscreen" {
+                        // Check if safe because of sunscreen or naturally safe
+                        let displayText = (currentSunscreen != nil && uvData.uvIndex >= 3) 
+                            ? "Applied sunscreen is sufficient" 
+                            : burnTime.displayText
+                        
+                        Text(displayText)
+                            .font(.headline)
+                            .foregroundColor(burnTimeWarningColor(burnTime.warningLevel))
+                        
+                        Spacer()
+                    } else {
+                        Label("Sunburn within", systemImage: "timer")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Text(burnTime.displayText)
+                            .font(.headline)
+                            .foregroundColor(burnTimeWarningColor(burnTime.warningLevel))
+                    }
                 }
                 .padding()
                 .background(Color(UIColor.tertiarySystemBackground))
