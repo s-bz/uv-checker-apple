@@ -60,7 +60,9 @@ While we strive for accuracy:
 Your privacy is important to us:
 - All personal data stays on your device
 - We don't collect, store, or transmit personal information
-- See our [Privacy Policy](PRIVACY_POLICY.md) for details
+- Anonymous analytics may be collected if enabled (disabled by default)
+- You have full control over analytics collection in app settings
+- See our [Privacy Policy](PRIVACY_POLICY.md) for complete details
 - You maintain ownership of your personal data
 
 ## 8. Third-Party Services
@@ -68,6 +70,7 @@ Your privacy is important to us:
 The App uses:
 - **Apple WeatherKit**: For UV and weather data (subject to Apple's terms)
 - **IP-API**: For approximate location when GPS is unavailable
+- **PostHog**: For anonymous analytics when enabled (optional)
 - These services have their own terms and privacy policies
 - We are not responsible for third-party service availability or accuracy
 

@@ -6,12 +6,15 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var notificationService: NotificationService
+    @EnvironmentObject private var postHogManager: PostHogManager
     
     @State private var remindersEnabled = false
     @State private var showingLocationUpgradeAlert = false
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
     @State private var showingSkinProfile = false
     @State private var showingReleaseNotes = false
+    @State private var showingAnalyticsInfo = false
+    @State private var showingAcknowledgments = false
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @AppStorage("hasProfile") private var hasProfile = false
@@ -23,34 +26,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
-                // Notifications Section
-                Section {
-                    Toggle(isOn: $remindersEnabled) {
-                        HStack {
-                            Image(systemName: "bell.badge")
-                                .foregroundColor(.blue)
-                                .frame(width: 28)
-                            VStack(alignment: .leading) {
-                                Text("Leave-Home Reminders")
-                                    .font(.body)
-                                Text("Get notified when UV is high")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                    .onChange(of: remindersEnabled) { oldValue, newValue in
-                        if newValue {
-                            enableReminders()
-                        } else {
-                            disableReminders()
-                        }
-                    }
-                } header: {
-                    Text("Notifications")
-                }
-                
-                // Personalization Section
+               // Personalization Section
                 Section {
                     Button(action: { showingSkinProfile = true }) {
                         HStack {
@@ -80,6 +56,37 @@ struct SettingsView: View {
                     Text("Personalization")
                 }
                 
+                // Notifications Section
+                Section {
+                    Toggle(isOn: $remindersEnabled) {
+                        HStack {
+                            Image(systemName: "bell.badge")
+                                .foregroundColor(.blue)
+                                .frame(width: 28)
+                            VStack(alignment: .leading) {
+                                Text("Leave-Home Reminders")
+                                    .font(.body)
+                                Text("Get notified when UV is high")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .onChange(of: remindersEnabled) { oldValue, newValue in
+                        postHogManager.capture(PostHogEvents.Settings.notificationsToggled, properties: [
+                            "enabled": newValue
+                        ])
+                        
+                        if newValue {
+                            enableReminders()
+                        } else {
+                            disableReminders()
+                        }
+                    }
+                } header: {
+                    Text("Notifications")
+                }
+                
                 // App Settings Section
                 Section {
                     Button(action: openAppSettings) {
@@ -98,6 +105,53 @@ struct SettingsView: View {
                 } header: {
                     Text("System")
                 }
+                
+                // Analytics Section
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { postHogManager.isEnabled },
+                        set: { newValue in
+                            postHogManager.setAnalyticsEnabled(newValue)
+                            postHogManager.capture(PostHogEvents.Settings.analyticsToggled, properties: [
+                                "enabled": newValue
+                            ])
+                        }
+                    )) {
+                        HStack {
+                            Image(systemName: "chart.bar.fill")
+                                .foregroundColor(.purple)
+                                .frame(width: 28)
+                            VStack(alignment: .leading) {
+                                Text("Anonymous Analytics")
+                                    .font(.body)
+                                Text("Help improve the app")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    
+                    Button(action: { showingAnalyticsInfo = true }) {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.blue)
+                                .frame(width: 28)
+                            Text("Analytics Information")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Privacy")
+                } footer: {
+                    Text("Anonymous analytics help us understand how you use the app to improve features and performance. No personal information is collected.")
+                }
+                
+ 
+
                 
                 // About Section
                 Section {
@@ -156,6 +210,20 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    
+                    Button(action: { showingAcknowledgments = true }) {
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.red)
+                                .frame(width: 28)
+                            Text("Acknowledgments")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 } header: {
                     Text("About")
                 } footer: {
@@ -185,6 +253,12 @@ struct SettingsView: View {
             .sheet(isPresented: $showingReleaseNotes) {
                 ReleaseNotesView()
             }
+            .sheet(isPresented: $showingAnalyticsInfo) {
+                AnalyticsInfoView()
+            }
+            .sheet(isPresented: $showingAcknowledgments) {
+                AcknowledgmentsView()
+            }
             .alert("Enable Location Access", isPresented: $showingLocationUpgradeAlert) {
                 Button("Open Settings") {
                     openAppSettings()
@@ -212,6 +286,10 @@ struct SettingsView: View {
         }
         .task {
             await checkPermissions()
+        }
+        .onAppear {
+            postHogManager.capture(PostHogEvents.Views.settings)
+            postHogManager.screen("Settings")
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             Task {

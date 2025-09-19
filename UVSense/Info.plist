@@ -19,5 +19,16 @@
 	<array>
 		<string>location</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.infuseproduct.uvsense.widget</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>uvsense</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -5,6 +5,7 @@ struct UVTimelineView: View {
     let sunscreenWindow: (start: Date?, end: Date?)
     @State private var selectedHour: Date?
     @State private var selectedHourData: HourlyUVData?
+    @EnvironmentObject private var postHogManager: PostHogManager
     
     init(hourlyData: [HourlyUVData], sunscreenWindow: (start: Date?, end: Date?)) {
         self.hourlyData = hourlyData
@@ -91,6 +92,13 @@ struct UVTimelineView: View {
                                 selectedHour = hourData.hour
                                 selectedHourData = hourData
                                 
+                                // Track timeline interaction
+                                postHogManager.capture(PostHogEvents.Clicks.selectTimelineHour, properties: [
+                                    "hour": Calendar.current.component(.hour, from: hourData.hour),
+                                    "uv_index": hourData.uvIndex,
+                                    "uv_level": hourData.uvLevel.description
+                                ])
+                                
                                 // Haptic feedback
                                 let impact = UIImpactFeedbackGenerator(style: .light)
                                 impact.impactOccurred()
@@ -124,6 +132,12 @@ struct UVTimelineView: View {
         .padding(16)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
+        .onAppear {
+            postHogManager.capture(PostHogEvents.Views.uvTimeline, properties: [
+                "hours_count": hourlyData.count,
+                "has_sunscreen_window": sunscreenWindow.start != nil
+            ])
+        }
     }
     
     private func isHourSelected(_ hour: Date) -> Bool {

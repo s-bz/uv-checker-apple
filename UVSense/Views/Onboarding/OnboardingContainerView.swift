@@ -10,6 +10,7 @@ enum OnboardingStep: Int, CaseIterable {
 struct OnboardingContainerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var postHogManager: PostHogManager
     
     @State private var currentStep: OnboardingStep = .welcome
     
@@ -32,6 +33,7 @@ struct OnboardingContainerView: View {
                     
                     case .complete:
                         OnboardingCompleteView {
+                            postHogManager.capture(PostHogEvents.Onboarding.completed)
                             dismiss()
                         }
                     }
@@ -43,6 +45,16 @@ struct OnboardingContainerView: View {
                 .animation(.easeInOut, value: currentStep)
             }
             .navigationBarHidden(true)
+        }
+        .onAppear {
+            postHogManager.capture(PostHogEvents.Onboarding.started)
+            postHogManager.screen("Onboarding")
+        }
+        .onChange(of: currentStep) { oldValue, newValue in
+            postHogManager.capture(PostHogEvents.Onboarding.stepCompleted, properties: [
+                "from_step": String(describing: oldValue),
+                "to_step": String(describing: newValue)
+            ])
         }
     }
 }
