@@ -122,7 +122,7 @@ class IPLocationService: ObservableObject {
             
             if let ip = newIP {
                 lastKnownIP = ip
-                await fetchCurrentLocation()
+                _ = await fetchCurrentLocation()
                 
                 // Notify about IP change
                 NotificationCenter.default.post(

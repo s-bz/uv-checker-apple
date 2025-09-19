@@ -90,12 +90,12 @@ struct TomorrowWeatherView: View {
                         Spacer()
                     }
                     
-                    // Sunblock needed window
-                    if let sunblockWindow = findSunblockWindow() {
+                    // Sunscreen needed window
+                    if let sunscreenWindow = findSunscreenWindow() {
                         HStack {
                             Image(systemName: "sun.max.trianglebadge.exclamationmark")
                                 .foregroundColor(.orange)
-                            Text("Sunblock needed from \(sunblockWindow)")
+                            Text("Sunscreen needed from \(sunscreenWindow)")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             Spacer()
@@ -112,15 +112,15 @@ struct TomorrowWeatherView: View {
         .cornerRadius(12)
     }
     
-    private func findSunblockWindow() -> String? {
+    private func findSunscreenWindow() -> String? {
         guard !hourlyData.isEmpty else { return nil }
         
-        // Find hours where UV index is 3 or higher (sunblock needed)
-        let sunblockHours = hourlyData.filter { $0.uvIndex >= 3.0 }
+        // Find hours where UV index is 3 or higher (sunscreen needed)
+        let sunscreenHours = hourlyData.filter { $0.uvIndex >= 3.0 }
         
-        guard !sunblockHours.isEmpty,
-              let firstHour = sunblockHours.first?.hour,
-              let lastHour = sunblockHours.last?.hour else { return nil }
+        guard !sunscreenHours.isEmpty,
+              let firstHour = sunscreenHours.first?.hour,
+              let lastHour = sunscreenHours.last?.hour else { return nil }
         
         let formatter = DateFormatter()
         formatter.dateFormat = "ha"

@@ -56,12 +56,12 @@ struct UVTimelineView: View {
                         // Different text based on whether we're in the window or not
                         if now >= start {
                             // We're in the window - show "until" time
-                            Text("Sunblock needed until \(formattedTime(end))")
+                            Text("Sunscreen needed until \(formattedTime(end))")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                         } else {
                             // We're before the window - show "from X to Y"
-                            Text("Sunblock needed from \(formattedTime(start)) to \(formattedTime(end))")
+                            Text("Sunscreen needed from \(formattedTime(start)) to \(formattedTime(end))")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                         }

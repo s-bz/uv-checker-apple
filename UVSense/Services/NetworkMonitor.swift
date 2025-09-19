@@ -20,8 +20,9 @@ class NetworkMonitor: ObservableObject {
     
     func start() {
         monitor.pathUpdateHandler = { [weak self] path in
+            guard let self else { return }
             Task { @MainActor in
-                self?.handlePathUpdate(path)
+                self.handlePathUpdate(path)
             }
         }
         

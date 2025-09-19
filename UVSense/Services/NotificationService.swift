@@ -117,20 +117,26 @@ class NotificationService: ObservableObject {
     }
     
     func cancelSunscreenReminders() {
-        notificationCenter.getDeliveredNotifications { delivered in
+        notificationCenter.getDeliveredNotifications { [weak self] delivered in
+            guard let self else { return }
             let sunscreenIds = delivered
                 .filter { $0.request.content.categoryIdentifier == "SUNSCREEN_REAPPLY" }
                 .map { $0.request.identifier }
             
-            self.notificationCenter.removeDeliveredNotifications(withIdentifiers: sunscreenIds)
+            Task { @MainActor in
+                self.notificationCenter.removeDeliveredNotifications(withIdentifiers: sunscreenIds)
+            }
         }
         
-        notificationCenter.getPendingNotificationRequests { pending in
+        notificationCenter.getPendingNotificationRequests { [weak self] pending in
+            guard let self else { return }
             let sunscreenIds = pending
                 .filter { $0.content.categoryIdentifier == "SUNSCREEN_REAPPLY" }
                 .map { $0.identifier }
             
-            self.notificationCenter.removePendingNotificationRequests(withIdentifiers: sunscreenIds)
+            Task { @MainActor in
+                self.notificationCenter.removePendingNotificationRequests(withIdentifiers: sunscreenIds)
+            }
         }
     }
     
