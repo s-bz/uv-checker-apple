@@ -10,8 +10,19 @@ struct UVTimelineView: View {
         self.hourlyData = hourlyData
         self.sunscreenWindow = sunscreenWindow
         // Initialize with current hour selected
-        let currentHour = Date()
-        if let closestHour = hourlyData.min(by: { abs($0.hour.timeIntervalSince(currentHour)) < abs($1.hour.timeIntervalSince(currentHour)) }) {
+        let now = Date()
+        let calendar = Calendar.current
+        let currentHourComponent = calendar.component(.hour, from: now)
+        
+        // Find the data for the current hour
+        if let currentHourData = hourlyData.first(where: { 
+            calendar.component(.hour, from: $0.hour) == currentHourComponent &&
+            calendar.isDate($0.hour, inSameDayAs: now)
+        }) {
+            self._selectedHour = State(initialValue: currentHourData.hour)
+            self._selectedHourData = State(initialValue: currentHourData)
+        } else if let closestHour = hourlyData.min(by: { abs($0.hour.timeIntervalSince(now)) < abs($1.hour.timeIntervalSince(now)) }) {
+            // Fallback to closest hour if exact match not found
             self._selectedHour = State(initialValue: closestHour.hour)
             self._selectedHourData = State(initialValue: closestHour)
         }
@@ -164,7 +175,7 @@ struct TimelineSegment: View {
             // UV bar
             RoundedRectangle(cornerRadius: 4)
                 .fill(colorForUVLevel(hourData.uvLevel))
-                .opacity(isPast && !isCurrentHour ? 0.3 : 1.0)
+                .opacity(isPast && !isCurrentHour ? 0.6 : 1.0)  // Less opacity reduction for past hours
                 .frame(width: 32, height: barHeight)
                 .overlay(
                     // UV index number
@@ -180,14 +191,14 @@ struct TimelineSegment: View {
                         .opacity(isSelected ? 1 : 0)
                 )
                 .overlay(
-                    // Current hour indicator
+                    // Current hour indicator - dot below the bar
                     isCurrentHour ?
                     VStack {
                         Spacer()
                         Circle()
-                            .fill(Color.primary)
-                            .frame(width: 6, height: 6)
-                            .offset(y: 10)
+                            .fill(Color.blue)  // More visible blue dot
+                            .frame(width: 8, height: 8)
+                            .offset(y: 12)
                     } : nil
                 )
         }

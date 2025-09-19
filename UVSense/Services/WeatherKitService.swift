@@ -86,7 +86,7 @@ class WeatherKitService: ObservableObject {
             
             // Process hourly forecast (next 48 hours to include tomorrow)
             let hourlyWeather = weather.1
-            self.hourlyForecast = hourlyWeather.forecast.prefix(48).map { forecast in
+            let newHourlyData = hourlyWeather.forecast.prefix(48).map { forecast in
                 HourlyUVData(
                     uvIndex: Double(forecast.uvIndex.value),
                     hour: forecast.date,
@@ -97,10 +97,16 @@ class WeatherKitService: ObservableObject {
             
             // Save hourly data if context provided
             if let context = modelContext {
-                for hourData in self.hourlyForecast {
+                // Save new hourly data
+                for hourData in newHourlyData {
                     context.insert(hourData)
                 }
                 try? context.save()
+                
+                // Just use the new data - WeatherKit already provides all hours we need
+                self.hourlyForecast = newHourlyData
+            } else {
+                self.hourlyForecast = newHourlyData
             }
             
             // Update cache tracking
@@ -157,8 +163,31 @@ class WeatherKitService: ObservableObject {
             )
             let cachedHourly = try context.fetch(hourlyDescriptor)
             
-            // Filter for future hours only
-            self.hourlyForecast = cachedHourly.filter { $0.hour > Date() }.prefix(24).map { $0 }
+            // Get all hours from today (including past) and tomorrow
+            let calendar = Calendar.current
+            let now = Date()
+            let startOfToday = calendar.startOfDay(for: now)
+            let endOfTomorrow = calendar.date(byAdding: .day, value: 2, to: startOfToday)!
+            
+            // Filter for today and tomorrow's hours and remove duplicates
+            var seenHours = Set<Date>()
+            self.hourlyForecast = cachedHourly.filter { hourData in
+                // Check if in date range
+                guard hourData.hour >= startOfToday && hourData.hour < endOfTomorrow else {
+                    return false
+                }
+                
+                // Check for duplicate hours (round to hour to handle slight time differences)
+                let hourComponent = calendar.dateComponents([.year, .month, .day, .hour], from: hourData.hour)
+                let roundedHour = calendar.date(from: hourComponent)!
+                
+                if seenHours.contains(roundedHour) {
+                    return false
+                } else {
+                    seenHours.insert(roundedHour)
+                    return true
+                }
+            }
             
         } catch {
             print("Failed to load cached data: \(error)")
@@ -168,10 +197,11 @@ class WeatherKitService: ObservableObject {
     var todayForecast: [HourlyUVData] {
         let calendar = Calendar.current
         let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
         let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now)!
         
         return hourlyForecast.filter { hourData in
-            hourData.hour >= now && hourData.hour <= endOfToday
+            hourData.hour >= startOfToday && hourData.hour <= endOfToday
         }
     }
     
