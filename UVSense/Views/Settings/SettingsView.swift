@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
     @State private var showingSkinProfile = false
     @State private var showingReleaseNotes = false
+    @State private var showingAnalyticsInfo = false
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @AppStorage("hasProfile") private var hasProfile = false
@@ -24,6 +25,36 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
+               // Personalization Section
+                Section {
+                    Button(action: { showingSkinProfile = true }) {
+                        HStack {
+                            Image(systemName: "person.crop.circle")
+                                .foregroundColor(.orange)
+                                .frame(width: 28)
+                            VStack(alignment: .leading) {
+                                Text("Skin Profile")
+                                    .foregroundColor(.primary)
+                                if hasProfile {
+                                    Text("Customize burn time calculations")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("Set up your skin type")
+                                        .font(.caption)
+                                        .foregroundColor(.orange)
+                                }
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Personalization")
+                }
+                
                 // Notifications Section
                 Section {
                     Toggle(isOn: $remindersEnabled) {
@@ -55,36 +86,6 @@ struct SettingsView: View {
                     Text("Notifications")
                 }
                 
-                // Personalization Section
-                Section {
-                    Button(action: { showingSkinProfile = true }) {
-                        HStack {
-                            Image(systemName: "person.crop.circle")
-                                .foregroundColor(.orange)
-                                .frame(width: 28)
-                            VStack(alignment: .leading) {
-                                Text("Skin Profile")
-                                    .foregroundColor(.primary)
-                                if hasProfile {
-                                    Text("Customize burn time calculations")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    Text("Set up your skin type")
-                                        .font(.caption)
-                                        .foregroundColor(.orange)
-                                }
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Personalization")
-                }
-                
                 // App Settings Section
                 Section {
                     Button(action: openAppSettings) {
@@ -103,6 +104,53 @@ struct SettingsView: View {
                 } header: {
                     Text("System")
                 }
+                
+                // Analytics Section
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { postHogManager.isEnabled },
+                        set: { newValue in
+                            postHogManager.setAnalyticsEnabled(newValue)
+                            postHogManager.capture(PostHogEvents.Settings.analyticsToggled, properties: [
+                                "enabled": newValue
+                            ])
+                        }
+                    )) {
+                        HStack {
+                            Image(systemName: "chart.bar.fill")
+                                .foregroundColor(.purple)
+                                .frame(width: 28)
+                            VStack(alignment: .leading) {
+                                Text("Anonymous Analytics")
+                                    .font(.body)
+                                Text("Help improve the app")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    
+                    Button(action: { showingAnalyticsInfo = true }) {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.blue)
+                                .frame(width: 28)
+                            Text("Analytics Information")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Privacy")
+                } footer: {
+                    Text("Anonymous analytics help us understand how you use the app to improve features and performance. No personal information is collected.")
+                }
+                
+ 
+
                 
                 // About Section
                 Section {
@@ -189,6 +237,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingReleaseNotes) {
                 ReleaseNotesView()
+            }
+            .sheet(isPresented: $showingAnalyticsInfo) {
+                AnalyticsInfoView()
             }
             .alert("Enable Location Access", isPresented: $showingLocationUpgradeAlert) {
                 Button("Open Settings") {

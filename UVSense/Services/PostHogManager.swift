@@ -59,6 +59,13 @@ class PostHogManager: ObservableObject {
         
         logger.info("PostHog initialized with host: \(secureConfig.host)")
         
+        // Respect user's analytics preference
+        if isEnabled {
+            posthog?.optIn()
+        } else {
+            posthog?.optOut()
+        }
+        
         // Identify user on startup
         identifyUser()
     }
