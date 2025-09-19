@@ -65,35 +65,63 @@ struct LocationPermissionView: View {
             
             Spacer()
             
-            Button(action: {
-                locationService.requestLocationPermission()
-                // Wait a moment for permission dialog
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    checkLocationStatusAndProceed()
+            VStack(spacing: 12) {
+                Button(action: {
+                    // If already determined (denied/restricted), just proceed
+                    if locationService.authorizationStatus == .denied || 
+                       locationService.authorizationStatus == .restricted {
+                        onComplete()
+                    } else {
+                        // Request permission
+                        locationService.requestLocationPermission()
+                        // Check status after a delay
+                        checkLocationStatusAndProceed()
+                    }
+                }) {
+                    Text("Continue")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(12)
                 }
-            }) {
-                Text("Continue")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(12)
             }
             .padding(.horizontal)
             .padding(.bottom, 30)
         }
         .onChange(of: locationService.authorizationStatus) { _, newStatus in
-            if newStatus == .authorizedAlways || newStatus == .authorizedWhenInUse {
+            // Proceed to dashboard regardless of permission status
+            switch newStatus {
+            case .authorizedAlways, .authorizedWhenInUse:
+                // User granted permission
                 onComplete()
+            case .denied, .restricted:
+                // User denied permission - still proceed with IP-based location
+                onComplete()
+            default:
+                break
             }
         }
     }
     
     private func checkLocationStatusAndProceed() {
-        if locationService.authorizationStatus == .authorizedAlways ||
-           locationService.authorizationStatus == .authorizedWhenInUse {
-            onComplete()
+        // Check status after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            switch locationService.authorizationStatus {
+            case .authorizedAlways, .authorizedWhenInUse:
+                // Permission granted
+                onComplete()
+            case .denied, .restricted:
+                // Permission denied - proceed with IP-based location
+                onComplete()
+            case .notDetermined:
+                // Still not determined - user might have dismissed the dialog
+                // Proceed anyway with IP-based location
+                onComplete()
+            @unknown default:
+                onComplete()
+            }
         }
     }
 }
