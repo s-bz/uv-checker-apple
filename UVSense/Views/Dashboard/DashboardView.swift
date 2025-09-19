@@ -613,22 +613,32 @@ struct CurrentConditionsCard: View {
     let onApplySunscreen: () -> Void
     let onRemoveSunscreen: () -> Void
     
+    @State private var showingUVInfo = false
+    
     var body: some View {
         VStack(spacing: 16) {
-            // UV Index Display
+            // UV Index Display - Tappable
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Current UV Index")
-                        .font(.headline)
+                    HStack {
+                        Text("Current UV Index")
+                            .font(.headline)
+                        
+                        Image(systemName: "info.circle")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
                     
                     if let uv = uvData {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text("\(Int(uv.uvIndex))")
                                 .font(.system(size: 64, weight: .semibold))
+                                .foregroundColor(uvIndexColor(for: uv.uvIndex))
                             
                             VStack(alignment: .leading) {
                                 Text(uv.uvLevel.description)
                                     .font(.headline)
+                                    .foregroundColor(uvIndexColor(for: uv.uvIndex))
                                 Text(uv.uvLevel.recommendation)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -641,6 +651,15 @@ struct CurrentConditionsCard: View {
                 }
                 
                 Spacer()
+                
+                // Chevron indicator
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary.opacity(0.5))
+            }
+            .contentShape(Rectangle()) // Make entire area tappable
+            .onTapGesture {
+                showingUVInfo = true
             }
             
             // Burn Time - only show if UV > 0
@@ -706,6 +725,9 @@ struct CurrentConditionsCard: View {
         .padding(16)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
+        .sheet(isPresented: $showingUVInfo) {
+            UVInfoModal(isPresented: $showingUVInfo, currentUVIndex: uvData?.uvIndex ?? 0)
+        }
     }
     
     private func formattedTime(_ date: Date) -> String {

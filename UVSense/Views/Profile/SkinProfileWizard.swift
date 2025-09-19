@@ -2,19 +2,38 @@ import SwiftUI
 import SwiftData
 
 enum SkinProfileStep: Int, CaseIterable {
-    case skinType
+    case skinColor
     case eyeColor
     case hairColor
     case tanningResponse
     case complete
 }
 
+// Skin color options
+struct SkinColorOption {
+    let id: String
+    let name: String
+    let color: Color
+    let fitzpatrickType: Int
+    
+    static let all = [
+        SkinColorOption(id: "pearl", name: "Pearl", color: Color(red: 1.0, green: 0.93, blue: 0.89), fitzpatrickType: 1),
+        SkinColorOption(id: "opal", name: "Opal", color: Color(red: 1.0, green: 0.88, blue: 0.78), fitzpatrickType: 2),
+        SkinColorOption(id: "ivory", name: "Ivory", color: Color(red: 1.0, green: 0.83, blue: 0.73), fitzpatrickType: 2),
+        SkinColorOption(id: "creme", name: "Creme", color: Color(red: 0.98, green: 0.78, blue: 0.63), fitzpatrickType: 3),
+        SkinColorOption(id: "coco", name: "Coco", color: Color(red: 0.87, green: 0.68, blue: 0.52), fitzpatrickType: 4),
+        SkinColorOption(id: "honey", name: "Honey", color: Color(red: 0.76, green: 0.56, blue: 0.41), fitzpatrickType: 4),
+        SkinColorOption(id: "tawny", name: "Tawny", color: Color(red: 0.65, green: 0.45, blue: 0.34), fitzpatrickType: 5),
+        SkinColorOption(id: "ebony", name: "Ebony", color: Color(red: 0.45, green: 0.31, blue: 0.24), fitzpatrickType: 6)
+    ]
+}
+
 struct SkinProfileWizard: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    @State private var currentStep: SkinProfileStep = .skinType
-    @State private var selectedSkinType: Int?
+    @State private var currentStep: SkinProfileStep = .skinColor
+    @State private var selectedSkinColor: SkinColorOption?
     @State private var selectedEyeColor: EyeColor?
     @State private var selectedHairColor: HairColor?
     @State private var selectedTanningResponse: TanningResponse?
@@ -29,9 +48,9 @@ struct SkinProfileWizard: View {
                 // Content
                 Group {
                     switch currentStep {
-                    case .skinType:
-                        ProfileSkinTypeView(
-                            selectedType: $selectedSkinType,
+                    case .skinColor:
+                        ProfileSkinColorView(
+                            selectedColor: $selectedSkinColor,
                             onContinue: {
                                 withAnimation {
                                     currentStep = .eyeColor
@@ -50,7 +69,7 @@ struct SkinProfileWizard: View {
                             },
                             onBack: {
                                 withAnimation {
-                                    currentStep = .skinType
+                                    currentStep = .skinColor
                                 }
                             }
                         )
@@ -87,7 +106,7 @@ struct SkinProfileWizard: View {
                     
                     case .complete:
                         ProfileCompleteView(
-                            skinType: selectedSkinType,
+                            skinType: selectedSkinColor?.fitzpatrickType,
                             eyeColor: selectedEyeColor,
                             hairColor: selectedHairColor,
                             tanningResponse: selectedTanningResponse,
@@ -114,7 +133,7 @@ struct SkinProfileWizard: View {
     }
     
     private func saveProfile() {
-        guard let skinType = selectedSkinType,
+        guard let skinType = selectedSkinColor?.fitzpatrickType,
               let eyeColor = selectedEyeColor,
               let hairColor = selectedHairColor,
               let tanningResponse = selectedTanningResponse else {
@@ -162,41 +181,65 @@ struct FitzpatrickType {
 
 // MARK: - Step Views
 
-struct ProfileSkinTypeView: View {
-    @Binding var selectedType: Int?
+struct ProfileSkinColorView: View {
+    @Binding var selectedColor: SkinColorOption?
     let onContinue: () -> Void
     let onBack: () -> Void
     
     var body: some View {
-        VStack(spacing: 24) {
-            Text("Select Your Skin Type")
+        VStack(spacing: 0) {
+            // Header text
+            Text("Select your skin color")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .padding(.top, 20)
+                .padding(.bottom, 8)
             
-            Text("Choose the description that best matches your natural skin color")
+            Text("Time to sunburn depends on your skin type.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .padding(.horizontal, 30)
+                .padding(.bottom, 20)
             
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(FitzpatrickType.all, id: \.value) { type in
-                        SkinTypeCard(
-                            type: type,
-                            isSelected: selectedType == type.value,
-                            onTap: {
-                                selectedType = type.value
+            // Color palette grid - no scroll needed
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 25),
+                GridItem(.flexible(), spacing: 25)
+            ], spacing: 20) {
+                ForEach(SkinColorOption.all, id: \.id) { option in
+                    VStack(spacing: 8) {
+                        Circle()
+                            .fill(option.color)
+                            .frame(width: 75, height: 75)
+                            .overlay(
+                                Circle()
+                                    .stroke(
+                                        selectedColor?.id == option.id ? Color.blue : Color.clear,
+                                        lineWidth: 3
+                                    )
+                            )
+                            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+                            .scaleEffect(selectedColor?.id == option.id ? 1.05 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: selectedColor?.id)
+                            .onTapGesture {
+                                selectedColor = option
                             }
-                        )
+                        
+                        Text(option.name.lowercased())
+                            .font(.footnote)
+                            .fontWeight(selectedColor?.id == option.id ? .semibold : .regular)
+                            .foregroundColor(selectedColor?.id == option.id ? .primary : .secondary)
                     }
                 }
-                .padding(.horizontal)
             }
+            .padding(.horizontal, 45)
+            
+            Spacer()
             
             HStack(spacing: 12) {
                 Button(action: onBack) {
-                    Text("Back")
+                    Text("Cancel")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -208,9 +251,10 @@ struct ProfileSkinTypeView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(selectedType == nil)
+                .disabled(selectedColor == nil)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 15)
         }
     }
 }
@@ -220,35 +264,102 @@ struct ProfileEyeColorView: View {
     let onContinue: () -> Void
     let onBack: () -> Void
     
+    // Reorder eye colors to group similar colors together
+    let eyeColorOrder: [EyeColor] = [
+        .lightBlue, .blue,           // Blues on same row
+        .lightGreen, .green,         // Greens on same row  
+        .lightGray, .gray,           // Grays on same row
+        .lightBrown, .hazel,         // Light browns on same row
+        .darkBrown, .black           // Dark browns on same row
+    ]
+    
     var body: some View {
-        VStack(spacing: 24) {
-            Text("Select Your Eye Color")
+        VStack(spacing: 0) {
+            // Header text
+            Text("Select your eye color")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .padding(.top, 15)
+                .padding(.bottom, 6)
             
             Text("Your natural eye color affects UV sensitivity")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .padding(.horizontal, 30)
+                .padding(.bottom, 15)
             
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(EyeColor.allCases, id: \.self) { color in
-                        SelectionCard(
-                            title: color.displayName,
-                            description: color.description,
-                            icon: color.icon,
-                            iconColor: color.iconColor,
-                            isSelected: selectedColor == color,
-                            onTap: {
-                                selectedColor = color
+            // Eye color grid - same layout as skin colors
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 25),
+                GridItem(.flexible(), spacing: 25)
+            ], spacing: 16) {
+                ForEach(eyeColorOrder, id: \.self) { color in
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 70, height: 70)
+                            
+                            // Eye representation
+                            ZStack {
+                                // Outer iris
+                                Circle()
+                                    .fill(color.visualColor)
+                                    .frame(width: 60, height: 60)
+                                
+                                // Inner detail/gradient
+                                Circle()
+                                    .fill(
+                                        RadialGradient(
+                                            gradient: Gradient(colors: [
+                                                color.visualColor.opacity(0.3),
+                                                color.visualColor
+                                            ]),
+                                            center: .center,
+                                            startRadius: 5,
+                                            endRadius: 30
+                                        )
+                                    )
+                                    .frame(width: 60, height: 60)
+                                
+                                // Pupil
+                                Circle()
+                                    .fill(Color.black)
+                                    .frame(width: 20, height: 20)
+                                
+                                // Highlight
+                                Circle()
+                                    .fill(Color.white.opacity(0.8))
+                                    .frame(width: 7, height: 7)
+                                    .offset(x: -4, y: -4)
                             }
+                        }
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    selectedColor == color ? Color.blue : Color.clear,
+                                    lineWidth: 3
+                                )
+                                .frame(width: 73, height: 73)
                         )
+                        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+                        .scaleEffect(selectedColor == color ? 1.05 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: selectedColor)
+                        .onTapGesture {
+                            selectedColor = color
+                        }
+                        
+                        Text(color.displayName.lowercased())
+                            .font(.footnote)
+                            .fontWeight(selectedColor == color ? .semibold : .regular)
+                            .foregroundColor(selectedColor == color ? .primary : .secondary)
                     }
                 }
-                .padding(.horizontal)
             }
+            .padding(.horizontal, 50)
+            
+            Spacer()
             
             HStack(spacing: 12) {
                 Button(action: onBack) {
@@ -266,7 +377,8 @@ struct ProfileEyeColorView: View {
                 .controlSize(.large)
                 .disabled(selectedColor == nil)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
         }
     }
 }
@@ -276,35 +388,76 @@ struct ProfileHairColorView: View {
     let onContinue: () -> Void
     let onBack: () -> Void
     
+    // Organize hair colors logically - light to dark
+    let hairColorOrder: [HairColor] = [
+        .lightBlonde, .blonde,       // Blondes
+        .darkBlonde, .lightBrown,    // Dark blonde/light brown
+        .brown, .darkBrown,          // Browns
+        .black, .red,                // Black and red
+        .gray, .white                // Gray and white
+    ]
+    
     var body: some View {
-        VStack(spacing: 24) {
-            Text("Select Your Hair Color")
+        VStack(spacing: 0) {
+            // Header text
+            Text("Select your hair color")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .padding(.top, 15)
+                .padding(.bottom, 6)
             
             Text("Your natural hair color (before any coloring)")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .padding(.horizontal, 30)
+                .padding(.bottom, 15)
             
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(HairColor.allCases, id: \.self) { color in
-                        SelectionCard(
-                            title: color.displayName,
-                            description: color.description,
-                            icon: "person.fill",
-                            iconColor: color.iconColor,
-                            isSelected: selectedColor == color,
-                            onTap: {
-                                selectedColor = color
-                            }
-                        )
+            // Hair color grid - no scroll needed
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 25),
+                GridItem(.flexible(), spacing: 25)
+            ], spacing: 16) {
+                ForEach(hairColorOrder, id: \.self) { color in
+                    VStack(spacing: 6) {
+                        // Regular hair color circle with gradient
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        color.visualHairColor.opacity(0.9),
+                                        color.visualHairColor
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 70, height: 70)
+                            .overlay(
+                                Circle()
+                                    .stroke(
+                                        selectedColor == color ? Color.blue : Color.clear,
+                                        lineWidth: 3
+                                    )
+                                    .frame(width: 73, height: 73)
+                            )
+                        
+                        Text(color.displayName.lowercased())
+                            .font(.footnote)
+                            .fontWeight(selectedColor == color ? .semibold : .regular)
+                            .foregroundColor(selectedColor == color ? .primary : .secondary)
+                    }
+                    .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+                    .scaleEffect(selectedColor == color ? 1.05 : 1.0)
+                    .animation(.easeInOut(duration: 0.2), value: selectedColor)
+                    .onTapGesture {
+                        selectedColor = color
                     }
                 }
-                .padding(.horizontal)
             }
+            .padding(.horizontal, 50)
+            
+            Spacer()
             
             HStack(spacing: 12) {
                 Button(action: onBack) {
@@ -322,7 +475,8 @@ struct ProfileHairColorView: View {
                 .controlSize(.large)
                 .disabled(selectedColor == nil)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
         }
     }
 }
@@ -544,6 +698,21 @@ extension EyeColor {
         "eye"
     }
     
+    var visualColor: Color {
+        switch self {
+        case .lightBlue: return Color(red: 0.53, green: 0.81, blue: 0.98)
+        case .lightGray: return Color(red: 0.75, green: 0.78, blue: 0.82)
+        case .lightGreen: return Color(red: 0.56, green: 0.74, blue: 0.56)
+        case .blue: return Color(red: 0.19, green: 0.45, blue: 0.72)
+        case .gray: return Color(red: 0.5, green: 0.52, blue: 0.55)
+        case .green: return Color(red: 0.29, green: 0.57, blue: 0.36)
+        case .hazel: return Color(red: 0.61, green: 0.47, blue: 0.33)
+        case .lightBrown: return Color(red: 0.65, green: 0.45, blue: 0.25)
+        case .darkBrown: return Color(red: 0.4, green: 0.25, blue: 0.15)
+        case .black: return Color(red: 0.15, green: 0.1, blue: 0.08)
+        }
+    }
+    
     var iconColor: Color {
         switch self {
         case .lightBlue: return .blue.opacity(0.5)
@@ -577,6 +746,22 @@ extension EyeColor {
 
 // MARK: - Hair Color Extension
 extension HairColor {
+    var visualHairColor: Color {
+        switch self {
+        case .red: return Color(red: 0.76, green: 0.28, blue: 0.15)
+        case .lightBlonde: return Color(red: 0.98, green: 0.94, blue: 0.75)
+        case .blonde: return Color(red: 0.94, green: 0.86, blue: 0.51)
+        case .darkBlonde: return Color(red: 0.76, green: 0.65, blue: 0.42)
+        case .lightBrown: return Color(red: 0.65, green: 0.52, blue: 0.39)
+        case .brown: return Color(red: 0.5, green: 0.35, blue: 0.25)
+        case .darkBrown: return Color(red: 0.3, green: 0.2, blue: 0.13)
+        case .black: return Color(red: 0.1, green: 0.08, blue: 0.06)
+        case .gray: return Color(red: 0.6, green: 0.6, blue: 0.6)
+        case .white: return Color(red: 0.95, green: 0.95, blue: 0.95)
+        case .bald: return Color(red: 0.8, green: 0.8, blue: 0.8)
+        }
+    }
+    
     var iconColor: Color {
         switch self {
         case .red: return .red.opacity(0.8)
